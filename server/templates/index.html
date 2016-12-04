@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% set title = "Main" %}
+
+{% block content %}
+{% if info %}
+    <ul>
+    {% for pair, info in info.items() %}
+    <li>
+        <h2>{{ pair }}</h2>
+        {% for name, val in info.items() %}
+        <dl>
+            <dt>{{ name }}</dt>
+            <dd>{{ val }}</dd>
+        </dl>
+        {% endfor %}
+    </li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No polls are available.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,7 @@
+.env
+*.pyc
+uwsgi.ini
+static/
+.DS_Store
+__pycache__
+node_modules

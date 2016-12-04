@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    {% block head %}
+        <script src="{{ url('static', filename='polyfills.bundle.js') }}"></script>
+        <script src="{{ url('static', filename='vendor.bundle.js') }}"></script>
+        <script src="{{ url('static', filename='main.bundle.js') }}"></script>
+        <link rel="stylesheet" type="text/css"
+              href="{{ url('static', filename='style.css') }}" />
+        <title>{{ title }}</title>
+    {% endblock %}
+  </head>
+  <body id="app">
+    {% block content %}
+    {% endblock %}
+    <app>
+    </app>
+  </body>
+</html>
