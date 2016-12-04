@@ -14,7 +14,13 @@ export class PairService {
     }
     private extractData(res: Response) {
        let body = res.json();
-       return body.data || {};
+       return Object.keys(body).map(key => ({ 
+        name: key,
+        params: Object.keys(body[key]).map(param => ({
+                name: param,
+                value: body[key][param]
+            }))
+        })) || {};
     }
     private handleError(error: Response | any) {
         let errMsg: string;

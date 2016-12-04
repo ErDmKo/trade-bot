@@ -1,10 +1,10 @@
 <h3>Pairs </h3>
 <ul>
     <li *ngFor="let pairInfo of pairs">
-        <span [innerHTML]="pairInfo.name"></span>
+        <span [innerHtml]="pairInfo.name"></span>
         <dl *ngFor="let pairParam of pairInfo.params">
-            <dt [innerHTML]="pairParam.name"></dt>
-            <dd [innerHTML]="pairParam.value"></dd>
+            <dt [innerHtml]="pairParam.name"></dt>
+            <dd [innerHtml]="pairParam.value"></dd>
         </dl>
     </li>
 </ul>
