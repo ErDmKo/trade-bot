@@ -21,7 +21,7 @@ export class PairComponent {
     }
     ngOnInit () {
         this.pairService
-            .getPairs()
+            .getWsPairs()
             .subscribe(
                 pairs => this.pairs = pairs,
                 error => this.errorMessage = <any>error

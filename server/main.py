@@ -8,6 +8,7 @@ import aiohttp_jinja2
 from aiohttp import web
 from .routes import setup_routes
 from .utils import load_config
+from .info_updater import setup_info_updater
 from .middlewares import setup_middlewares
 
 from server import btcelib 
@@ -39,6 +40,7 @@ def init():
     # setup views and routes
     setup_routes(app)
     setup_middlewares(app)
+    setup_info_updater(app)
 
     return app
 

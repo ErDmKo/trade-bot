@@ -9,7 +9,6 @@ def load_config(fname):
 
 class DecimalEncoder(json.JSONEncoder):
     def default(self, obj):
-        print(obj)
         if isinstance(obj, Decimal):
             return str(obj) 
         return super(DecimalEncoder, self).default(obj)
