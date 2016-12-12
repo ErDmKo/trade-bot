@@ -1,10 +1,23 @@
-<h3>Pairs </h3>
-<ul>
-    <li *ngFor="let pairInfo of pairs">
-        <span [innerHtml]="pairInfo.name"></span>
-        <dl *ngFor="let pairParam of pairInfo.params">
-            <dt [innerHtml]="pairParam.name"></dt>
-            <dd [innerHtml]="pairParam.value"></dd>
-        </dl>
-    </li>
-</ul>
+<div class="pairs">
+    <h3 class="pairs__header">Pairs</h3>
+    <ul class="pairs__list">
+        <li 
+          class="pairs__item"
+          *ngFor="let pairInfo of pairs">
+            <span 
+              class="pairs__name"
+              [innerHtml]="pairInfo.name">
+            </span>
+            <dl
+              class="pairs__info"
+              *ngFor="let pairParam of pairInfo.params">
+                <dt 
+                    class="pairs__key"
+                    [innerHtml]="pairParam.name"></dt>
+                <dd 
+                    class="pairs__value"
+                    [innerHtml]="pairParam.value"></dd>
+            </dl>
+        </li>
+    </ul>
+</div>

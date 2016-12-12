@@ -41,7 +41,7 @@ module.exports = function (options) {
                 exclude: [/\.(spec|e2e)\.ts$/]
             }, {
                 test: /\.css$/,
-                loaders: ['to-string-loader', 'css-loader']
+                loaders: ['to-string-loader', 'css-loader', 'postcss-loader']
             }, {
                 test: /\.(jpg|png|gif)$/,
                 loader: 'file'

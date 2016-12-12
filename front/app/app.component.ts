@@ -9,6 +9,8 @@ import './rxjs-operators';
     encapsulation: ViewEncapsulation.None,
     template: `
     <pair></pair>
+    <order-book></order-book>
+    <order></order>
     `
 })
 export class AppComponent {

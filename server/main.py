@@ -10,6 +10,7 @@ from .routes import setup_routes
 from .utils import load_config
 from .info_updater import setup_info_updater
 from .middlewares import setup_middlewares
+from .db import close_pg, init_pg
 
 from server import btcelib 
 
@@ -34,9 +35,9 @@ def init():
         app, loader=jinja2.PackageLoader('server', 'templates'))
 
     # create connection to the database
-    # app.on_startup.append(init_pg)
+    app.on_startup.append(init_pg)
     # shutdown db connection on exit
-    # app.on_cleanup.append(close_pg)
+    app.on_cleanup.append(close_pg)
     # setup views and routes
     setup_routes(app)
     setup_middlewares(app)

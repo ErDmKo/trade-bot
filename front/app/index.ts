@@ -1,6 +1,9 @@
 import { NgModule, ApplicationRef } from '@angular/core';
 import { AppComponent } from './app.component';
 import { PairComponent } from './pair.component';
+import { OrderBookComponent } from './order-book.component';
+import { OrderBookService } from './order-book.component/order-book.service';
+import { OrderComponent } from './order.component';
 import { AppState, InternalStateType } from './app.service';
 import { removeNgStyles, createNewHosts, createInputTransfer } from '@angularclass/hmr';
 
@@ -24,7 +27,9 @@ const APP_PROVIDERS = [
     bootstrap: [AppComponent],
     declarations: [
         AppComponent,
-        PairComponent
+        OrderBookComponent,
+        PairComponent,
+        OrderComponent
     ],
     imports: [
         BrowserModule,
@@ -33,6 +38,7 @@ const APP_PROVIDERS = [
         // RouterModule.forRoot(ROUTES, { useHash: true, preloadingStrategy: PreloadAllModules })
     ],
     providers: [
+        OrderBookService,
         ENV_PROVIDERS,
         APP_PROVIDERS
     ]

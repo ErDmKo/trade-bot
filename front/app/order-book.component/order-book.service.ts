@@ -1,27 +1,24 @@
 import { Injectable } from '@angular/core';
-import { Response } from '@angular/http';
+import { Http, Response } from '@angular/http';
 import { Observable } from 'rxjs/Observable';
 import { Subject } from 'rxjs/Subject';
 import { WebSocketSubject } from 'rxjs/observable/dom/WebSocketSubject'
 
 @Injectable()
-export class PairService {
-    private wsUrl = "/api/ws_pairs"
-    private pairList = [];
-    constructor () {}
+export class OrderBookService {
+    private wsUrl = "/api/ws_order_book"
 
-    getPairs (): any[] {
-        return this.pairList;
+    constructor(){
     }
-    subPairs (): Observable<any[]> {
+
+    getWsData (): Observable<any[]> {
         let sub: Subject<String> = WebSocketSubject.create(
             this.getRelativeSocket(this.wsUrl)
         )
-        let obser = sub.map(this.extractData.bind(this));
+        let obser = sub.map(this.extractData);
         sub.next('connect');
         return obser;
     }
-
     private extractData(res: Response | Object) {
         let body = {};
         if (res instanceof Response) {
@@ -29,26 +26,13 @@ export class PairService {
         } else {
             body = res;
         }
-        this.pairList = Object.keys(body);
         return Object.keys(body).map(key => ({ 
             name: key,
             params: Object.keys(body[key]).map(param => ({
                     name: param,
-                    value: body[key][param]
+                    value: body[key][param].slice(0, 10)
                 }))
         })) || {};
-    }
-    private handleError(error: Response | any) {
-        let errMsg: string;
-        if (error instanceof Response) {
-            const body = error.json() || '';
-            const err = body.error || JSON.stringify(body);
-            errMsg = `${error.status} - ${error.statusText || ''} ${err}`;
-        } else {
-            errMsg = error.message ? error.message : error.toString();
-        }
-        console.error(errMsg);
-        return Observable.throw(errMsg);
     }
     private getRelativeSocket(path: String) {
         let loc: Location = window.location;

@@ -1,0 +1,33 @@
+<div class="order-book">
+    <h3 *ngIf="pair" class="order-book__header" [innerHtml]="pair">Order Book</h3>
+    <ul class="order-book__list">
+        <li 
+          class="order-book__item"
+          *ngFor="let pairInfo of data">
+            <span 
+              class="order-book__name"
+              [innerHtml]="pairInfo.name">
+            </span>
+            <dl
+              [className]="['order-book__info']"
+              *ngFor="let pairParam of pairInfo.params">
+                <dt 
+                    class="order-book__key"
+                    [innerHtml]="pairParam.name"></dt>
+                <dd 
+                    Class="order-book__value">
+                    <li 
+                        class="order-book__order"
+                        *ngFor="let order of pairParam.value">
+                        <div 
+                            class="order-book__price"
+                            [innerHtml] = "order[0]"></div>
+                        <div 
+                            class="order-book__amount"
+                            [innerHtml] = "order[1]"></div>
+                    </li>
+                </dd>
+            </dl>
+        </li>
+    </ul>
+</div>

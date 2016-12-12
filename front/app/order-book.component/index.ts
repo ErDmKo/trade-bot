@@ -1,34 +1,30 @@
 import { Component, ViewEncapsulation } from '@angular/core';
+import { OrderBookService } from './order-book.service'
 
 import { AppState } from '../app.service';
-import { PairService } from './pair.service';
 
 @Component({
-  selector: 'pair',
-  providers: [
-    PairService,
-  ],
+  selector: 'order-book',
   styleUrls: [
-      './stylei.css'
+      './style.css'
   ],
   templateUrl: './template.html'
 })
-export class PairComponent {
-    pairs: any[];
+export class OrderBookComponent {
+    private data: any[];
+    private pair: string;
     errorMessage: string;
 
     constructor(
         public appState: AppState,
-        private pairService: PairService,
+        private orderBookService: OrderBookService
     ) {
     }
     ngOnInit () {
-        this.pairService
-            .subPairs()
+        this.orderBookService
+            .getWsData()
             .subscribe(
-                pairs => {
-                    this.pairs = pairs
-                },
+                data => this.data = data,
                 error => this.errorMessage = <any>error
             );
     }
