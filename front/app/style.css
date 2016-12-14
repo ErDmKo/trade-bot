@@ -1,0 +1,5 @@
+.main {
+    &__cols {
+        display: flex;
+    }
+}

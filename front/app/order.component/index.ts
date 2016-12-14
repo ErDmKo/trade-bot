@@ -3,11 +3,11 @@ import { AppState } from '../app.service';
 import { Http, Response, Headers } from '@angular/http';
 
 @Component({
-  selector: 'order',
-  styleUrls: [
-      './style.css'
-  ],
-  templateUrl: './template.html'
+    selector: 'order',
+    styleUrls: [
+        './style.css'
+    ],
+    templateUrl: './template.html'
 })
 export class OrderComponent {
     private dataUrl = '/api/order'

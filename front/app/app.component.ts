@@ -7,11 +7,10 @@ import './rxjs-operators';
 @Component({
     selector: 'app',
     encapsulation: ViewEncapsulation.None,
-    template: `
-    <pair></pair>
-    <order-book></order-book>
-    <order></order>
-    `
+    templateUrl: './template.html',
+    styleUrls: [
+        './style.css'
+    ],
 })
 export class AppComponent {
     // angularclassLogo = 'assets/img/angularclass-avatar.png';
