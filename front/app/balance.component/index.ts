@@ -1,32 +1,31 @@
 import { Component, ViewEncapsulation } from '@angular/core';
-import { OrderBookService } from './order-book.service'
-
+import { BalanceService } from './balance.service'
 import { AppState } from '../app.service';
 
 @Component({
-  selector: 'order-book',
+  selector: 'balance',
+  providers: [
+    BalanceService,
+  ],
   styleUrls: [
       './style.css'
   ],
-  templateUrl: './template.html',
-  providers: [
-    OrderBookService
-  ]
+  templateUrl: './template.html'
 })
-export class OrderBookComponent {
-    private data: any[];
+export class BalanceComponent {
+    private data: string;
     errorMessage: string;
 
     constructor(
         public appState: AppState,
-        private orderBookService: OrderBookService
+        private balanceService: BalanceService
     ) {
     }
     ngOnInit () {
-        this.orderBookService
+        this.balanceService
             .getWsData()
             .subscribe(
-                data => this.data = data,
+                data => this.data = JSON.stringify(data, null, 2),
                 error => this.errorMessage = <any>error
             );
     }

@@ -1,0 +1,9 @@
+.balance {
+    font-size: 12px;
+    padding: 10px;
+    &__header {
+        font-size: 20px;
+        margin: 0px;
+        font-weight: normal;
+    }
+}

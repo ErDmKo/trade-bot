@@ -8,7 +8,20 @@ async def update_info(app):
     while True:
         pair_info = await app['pubapi'].call('ticker')
         depth_info = await app['pubapi'].call('depth')
+        balans_info = await app['privapi'].call('getInfo')
         print('tik')
+
+        if app.get('balance_socket'):
+            ws = app.get('balance_socket')
+
+            try:
+                ws.send_json(balans_info, dumps = dumps)
+            except RuntimeError as e:
+                if str(e) == 'websocket connection is closing':
+                    print('close client')
+                else:
+                    print('client ERROR')
+                    raise e
 
         if app.get('depth_socket'):
             ws = app.get('depth_socket')
