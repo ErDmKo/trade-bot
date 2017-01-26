@@ -1,29 +1,47 @@
 import { Component, ViewEncapsulation } from '@angular/core';
 import { AppState } from '../app.service';
-import { Http, Response, Headers } from '@angular/http';
+import { OrderService } from './order.service';
 
 @Component({
     selector: 'order',
     styleUrls: [
         './style.css'
     ],
-    templateUrl: './template.html'
+    templateUrl: './template.html',
+    providers: [
+        OrderService
+    ]
 })
 export class OrderComponent {
-    private dataUrl = '/api/order'
-    private headers = new Headers({'Content-Type': 'application/json'});
+    private orders: any[];
+    errorMessage: string;
 
     constructor(
         public appState: AppState,
-        private http: Http
+        private orderService: OrderService
     ) {
     }
+    removeOrder(id) {
+        this.orderService
+            .removeOrder(id)
+            .subscribe(
+                info => this.orders = info.orders,
+                error => this.errorMessage = <any>error
+            )
+    }
+    ngOnInit () {
+        this.orderService
+            .getList()
+            .subscribe(
+                info => this.orders = info.orders,
+                error => this.errorMessage = <any>error
+            );
+    }
     onOrder() {
-        this.http.post(this.dataUrl, JSON.stringify({
-            price: 10,
-            pair: 'btc_usd'
-        }), {
-            headers: this.headers
-        }).subscribe(r => console.log(r))
+        this.orderService
+            .onOrder(10, 'btc_usd')
+            .subscribe(info => {
+                this.orders = info.orders;
+            })
     }
 }

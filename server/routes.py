@@ -7,8 +7,12 @@ PROJECT_ROOT = pathlib.Path(__file__).parent
 
 def setup_routes(app):
     app.router.add_get('/', views.index, name='main')
+
     app.router.add_post('/api/order', views.order, name='order')
+    app.router.add_get('/api/order', views.get_orders, name='get_order')
+    app.router.add_delete('/api/order', views.delete_orders, name='delete_order')
     app.router.add_get('/api/pairs', views.pairs, name='pairs')
+
     app.router.add_get('/api/ws_pairs', views.ws_pairs, name='ws_pairs')
     app.router.add_get('/api/ws_balance', views.ws_balance, name='ws_balance')
     app.router.add_get('/api/ws_order_book', views.ws_order_book, name='ws_order_book')

@@ -14,6 +14,25 @@ async def pairs(request):
     info = await request.app['pubapi'].call('ticker')
     return web.json_response(info, dumps = dumps)
 
+async def delete_orders(request):
+    async with request.app['db'].acquire() as conn:
+        await conn.execute(db.order.delete().where(
+            db.order.c.id==request.GET.get('id')
+        ))
+        cursor = await conn.execute(db.order.select())
+        orders = await cursor.fetchall()
+        return web.json_response({
+            'orders': [dict(q) for q in orders]
+        }, dumps = dumps)
+
+async def get_orders(request):
+    async with request.app['db'].acquire() as conn:
+        cursor = await conn.execute(db.order.select())
+        orders = await cursor.fetchall()
+        return web.json_response({
+            'orders': [dict(q) for q in orders]
+        }, dumps = dumps)
+    
 async def order(request):
 
     data = await request.json()

@@ -1,4 +1,12 @@
 <div class="order">
+    <ul>
+        <li (click)="removeOrder(order.id)" *ngFor="let order of orders">
+            <span [innerHtml]="order.pub_date"></span>
+            <span [innerHtml]="order.price"></span>
+            <span [innerHtml]="order.pair"></span>
+            <span [innerHtml]="order.id"></span>
+        </li>
+    </ul>
     <button (click)="onOrder()">
         Order
     </button>
