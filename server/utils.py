@@ -18,3 +18,6 @@ class DecimalEncoder(json.JSONEncoder):
 
 def dumps(data):
     return json.dumps(data, cls=DecimalEncoder)
+
+def loads(data):
+    return json.loads(data)

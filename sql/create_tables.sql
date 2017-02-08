@@ -5,7 +5,7 @@ BEGIN;
 CREATE TABLE
     "order" (
         "id" serial NOT NULL PRIMARY KEY,
-        "pub_date" date not null default CURRENT_DATE,
+        "pub_date" timestamp not null default CURRENT_DATE,
         "price" integer NOT NULL,
         "pair" varchar(200) NOT NULL
     );
