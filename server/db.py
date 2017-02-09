@@ -69,11 +69,15 @@ def command_fn(command):
     print('{} - undefined'.format(command))
 
 async def main_test(loop):
-    conf = load_config(str(pathlib.Path('.') / 'config' / 'base.yaml'))
+    conf = load_config()
     engine = sync_engine(conf['postgres'])
     if len(sys.argv) >= 2:
         command = sys.argv[2]
-        getattr(meta, command, lambda engine: command_fn(command))(engine)
+        if command in ['drop', 'create']:
+            table = sys.argv[3]
+            meta.drop_all(engine, tables=[meta.tables.get(table)])
+        else:
+            getattr(meta, command, lambda engine: command_fn(command))(engine)
 
 def run_script():
    loop = asyncio.get_event_loop()

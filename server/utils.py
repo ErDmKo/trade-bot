@@ -1,9 +1,10 @@
 import json
 import yaml
+import pathlib
 from decimal import Decimal
 from datetime import date as dateFormat
 
-def load_config(fname):
+def load_config(fname=str(pathlib.Path('.') / 'config' / 'base.yaml')):
     with open(fname, 'rt') as f:
         data = yaml.load(f)
     return data

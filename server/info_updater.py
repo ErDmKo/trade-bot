@@ -50,7 +50,7 @@ async def update_info(app):
     
         if app.get('db'):
             async with app['db'].acquire() as conn:
-                for pair, info in pair_info.items():
+                for pair, info in depth_info.items():
                     result = await conn.execute(
                         history.insert().values(
                             pair = pair,
