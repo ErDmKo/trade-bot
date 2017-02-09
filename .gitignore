@@ -2,6 +2,7 @@
 *.pyc
 uwsgi.ini
 static/
+local.yaml
 .DS_Store
 __pycache__
 node_modules

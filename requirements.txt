@@ -1,0 +1,13 @@
+aiohttp==1.2.0
+aiohttp-jinja2==0.13.0
+aiopg==0.13.0
+async-timeout==1.1.0
+chardet==2.3.0
+Jinja2==2.9.5
+MarkupSafe==0.23
+multidict==2.1.4
+pathlib==1.0.1
+psycopg2==2.6.2
+PyYAML==3.12
+SQLAlchemy==1.1.5
+yarl==0.9.1
