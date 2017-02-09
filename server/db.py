@@ -1,4 +1,5 @@
 import sqlalchemy as sa
+import contextlib
 from sqlalchemy.dialects.postgresql import JSONB
 import aiopg.sa
 import asyncio
@@ -28,9 +29,11 @@ history_orders = sa.Table(
 order = sa.Table(
     'order', meta,
     sa.Column('id', sa.Integer, nullable=False, primary_key=True),
-    sa.Column('pub_date', sa.DateTime, nullable=False),
+    sa.Column('pub_date', sa.DateTime, default=sa.sql.func.now(), nullable=False),
     sa.Column('price', sa.Float, nullable=False),
+    sa.Column('amount', sa.Float, nullable=False),
     sa.Column('pair', sa.String(200), nullable=False),
+    sa.Column('is_sell', sa.Boolean(), nullable=False),
 )
 
 def sync_engine(conf):
@@ -58,9 +61,14 @@ async def close_pg(app):
     app['db'].close()
     await app['db'].wait_closed()
 
-async def add_order(conn, price, pair):
+async def add_order(conn, price, pair, amount, is_sell):
     result = await conn.execute(
-        order.insert().values(price=price, pair=pair)
+        order.insert().values(
+            price=price,
+            pair=pair,
+            amount=amount,
+            is_sell = is_sell
+        )
     )
     result_info = await result.first()
     print(result_info)
@@ -75,7 +83,15 @@ async def main_test(loop):
         command = sys.argv[2]
         if command in ['drop', 'create']:
             table = sys.argv[3]
-            meta.drop_all(engine, tables=[meta.tables.get(table)])
+            getattr(meta, '{}_all'.format(command))(engine, tables=[meta.tables.get(table)])
+        if command == 'delete':
+            table = sys.argv[3]
+            with contextlib.closing(engine.connect()) as con:
+                trans = con.begin()
+                table = sys.argv[3]
+                table = meta.tables.get(table)
+                con.execute(table.delete())
+                trans.commit()
         else:
             getattr(meta, command, lambda engine: command_fn(command))(engine)
 
