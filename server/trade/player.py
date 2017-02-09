@@ -10,6 +10,7 @@ class Player(object):
 
     LIMIT = 10000
     PAIR = 'btc_usd'
+    FEE = 0.1
 
     @classmethod
     async def create(cls, connection, tradeApi, pubApi):
@@ -55,6 +56,7 @@ class Player(object):
             D(self.balance[currency]/1000).quantize(self.prec)
         ])
 
+
     async def sell(self, depth):
         amount = self.get_new_amount(self.currency['sell'])
         price = depth['asks'][0][0]
@@ -68,7 +70,7 @@ class Player(object):
         order = await db.add_order(**info)
 
         if self.order:
-            print('{} sell {}'.format(info['price'], self.order.price))
+            print('sell before {} now {}'.format(self.order.price, info['price']))
 
     async def buy(self, depth):
         await self.get_balance()
@@ -82,7 +84,16 @@ class Player(object):
             is_sell = False
         )
         order = await db.add_order(**info)
-        print('{} buy {}'.format(info['price'], self.order.price))
+        print('buy before {} now {}'.format(self.order.price, info['price']))
+
+    def get_best_price(self, deps):
+        fee = float(self.pair_info['fee']) + self.FEE
+        all_money = self.order.amount * self.order.price
+        fee_money = all_money * fee
+        if self.order.is_sell:
+            return float(deps['bids'][0][0]) - fee_money
+        else:
+            return float(deps['asks'][0][0]) + fee_money
 
     async def tick(self, resp):
         self.depth = resp
@@ -92,12 +103,14 @@ class Player(object):
             for currency, amount in self.balance.items():
                 if amount > 0:
                     await self.sell(resp)
-        elif order.is_sell:
-            if order.price < float(resp['bids'][0][0]):
-                await self.buy(resp)
         else:
-            if order.price > float(resp['asks'][0][0]):
-                await self.sell(resp)
+            best_price = self.get_best_price(resp)
+            if order.is_sell:
+                if order.price < best_price:
+                    await self.buy(resp)
+            else:
+                if order.price > best_price:
+                    await self.sell(resp)
 
 async def main_test(loop):
     conf = load_config()
