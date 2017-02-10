@@ -59,7 +59,7 @@ class Player(object):
 
     async def sell(self, depth):
         amount = self.get_new_amount(self.currency['sell'])
-        price = depth['asks'][0][0]
+        price = depth['bids'][0][0]
         info = dict(
             conn = self.connection,
             price = price,
@@ -75,7 +75,7 @@ class Player(object):
     async def buy(self, depth):
         await self.get_balance()
         amount = self.get_new_amount(self.currency['buy'])
-        price = depth['bids'][0][0]
+        price = depth['asks'][0][0]
         info = dict(
             conn = self.connection,
             price = price,
@@ -86,14 +86,11 @@ class Player(object):
         order = await db.add_order(**info)
         print('buy before {} now {}'.format(self.order.price, info['price']))
 
-    def get_best_price(self, deps):
-        fee = float(self.pair_info['fee']) + self.FEE
-        all_money = self.order.amount * self.order.price
-        fee_money = all_money * fee
-        if self.order.is_sell:
-            return float(deps['bids'][0][0]) - fee_money
-        else:
-            return float(deps['asks'][0][0]) + fee_money
+    def get_best_price(self, amount, price):
+        fee = (float(self.pair_info['fee']) + self.FEE) / 100
+        all_money = amount * float(price)
+        return all_money * (1 - fee)
+
 
     async def tick(self, resp):
         self.depth = resp
@@ -104,12 +101,12 @@ class Player(object):
                 if amount > 0:
                     await self.sell(resp)
         else:
-            best_price = self.get_best_price(resp)
+            old_money = self.get_best_price(self.order.amount, self.order.price)
             if order.is_sell:
-                if order.price < best_price:
+                if old_money > self.get_best_price(self.order.amount, resp['asks'][0][0]):
                     await self.buy(resp)
             else:
-                if order.price > best_price:
+                if old_money < self.get_best_price(self.order.amount, resp['bids'][0][0]):
                     await self.sell(resp)
 
 async def main_test(loop):
