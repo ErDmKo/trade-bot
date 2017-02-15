@@ -57,11 +57,15 @@ async def update_info(app):
                             resp = dumps(info)
                         )
                     )
+        if app.get('strategy'):
+            strategy = app.get('strategy')
+            for pair, info in depth_info.items():
+                if strategy.PAIR == pair:
+                    await app['strategy'].tick(info)
         await asyncio.sleep(2)
     
 async def on_shutdown(app):
     app['updater_future'].cancel()
-
     
 def setup_info_updater(app):
     app['updater_future'] = asyncio.ensure_future(

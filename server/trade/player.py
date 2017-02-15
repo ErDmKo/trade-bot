@@ -1,116 +1,35 @@
-import sqlalchemy as sa
 import asyncio
 import json
-from decimal import Decimal as D
 from server import db
-from ..utils import load_config
+from server import utils 
 from ..btcelib import TradeAPIv1, PublicAPIv3
+from .SimpleStrategy import SimpleStrategy
 
-class Player(object):
+async def load_strategy(app):
+    while True:
+        engine = app.get('db')
+        if not engine:
+            await asyncio.sleep(0.1)
+            continue
 
-    LIMIT = 10000
-    PAIR = 'btc_usd'
-    FEE = 0.1
+        async with engine.acquire() as conn:
+            tradeApi = app['privapi']
+            pubApi = PublicAPIv3('btc_usd')
+            app['strategy'] = await SimpleStrategy.create(conn, tradeApi, pubApi)
+        break
 
-    @classmethod
-    async def create(cls, connection, tradeApi, pubApi):
-        self = Player()
-        self.api = tradeApi
-        self.pubApi = pubApi
-        self.connection = connection
-        self.prec = D(10) ** -3
-        currency = self.PAIR.split('_')
-        self.currency = {
-            'buy': currency[1],
-            'sell': currency[0]
-        }
-        await self.get_pair_info()
-        await self.get_order()
-        await self.get_balance()
-        return self
+async def on_shutdown(app):
+    app['strategy_maker'].cancel()
 
-    async def get_pair_info(self):
-         resp = await self.pubApi.call('info')
-         self.pair_info = resp['pairs'][self.PAIR]
-         self.prec = D(10) ** -self.pair_info['decimal_places']
-         return self.pair_info
-
-    async def get_order(self):
-        cursor = await self.connection.execute(
-            db.order.select().order_by(sa.desc(db.order.c.pub_date)).limit(1)
-        )
-        async for order in cursor:
-            self.order = order
-            return order
-        self.order = None
-        return None
-
-    async def get_balance(self, currency='btc'):
-        balnce_info = await self.api.call('getInfo')
-        self.balance = balnce_info['funds']
-        return self.balance[currency]
-
-    def get_new_amount(self, currency):
-        return max([
-            self.pair_info['min_amount'],
-            D(self.balance[currency]/1000).quantize(self.prec)
-        ])
-
-
-    async def sell(self, depth):
-        amount = self.get_new_amount(self.currency['sell'])
-        price = depth['bids'][0][0]
-        info = dict(
-            conn = self.connection,
-            price = price,
-            pair = self.PAIR,
-            amount = amount,
-            is_sell = True
-        )
-        order = await db.add_order(**info)
-
-        if self.order:
-            print('sell before {} now {}'.format(self.order.price, info['price']))
-
-    async def buy(self, depth):
-        await self.get_balance()
-        amount = self.get_new_amount(self.currency['buy'])
-        price = depth['asks'][0][0]
-        info = dict(
-            conn = self.connection,
-            price = price,
-            pair = self.PAIR,
-            amount = amount,
-            is_sell = False
-        )
-        order = await db.add_order(**info)
-        print('buy before {} now {}'.format(self.order.price, info['price']))
-
-    def get_best_price(self, amount, price):
-        fee = (float(self.pair_info['fee']) + self.FEE) / 100
-        all_money = amount * float(price)
-        return all_money * (1 - fee)
-
-
-    async def tick(self, resp):
-        self.depth = resp
-        order = await self.get_order()
-        if not order:
-            print ('init')
-            for currency, amount in self.balance.items():
-                if amount > 0:
-                    await self.sell(resp)
-        else:
-            old_money = self.get_best_price(self.order.amount, self.order.price)
-            if order.is_sell:
-                if old_money > self.get_best_price(self.order.amount, resp['asks'][0][0]):
-                    await self.buy(resp)
-            else:
-                if old_money < self.get_best_price(self.order.amount, resp['bids'][0][0]):
-                    await self.sell(resp)
+def add_simple(app):
+    app['strategy_maker'] = asyncio.ensure_future(
+        load_strategy(app),
+        loop=app.loop
+    )
+    app.on_shutdown.append(on_shutdown)
 
 async def main_test(loop):
-    conf = load_config()
+    conf = utils.load_config()
     engine = await db.get_engine(conf['postgres'], loop)
     async with engine.acquire() as conn:
         tradeApi = TradeAPIv1({
@@ -118,7 +37,7 @@ async def main_test(loop):
             'Secret': conf['api']['API_SECRET']
             })
         pubApi = PublicAPIv3('btc_usd')
-        player = await Player.create(conn, tradeApi, pubApi)
+        player = await SimpleStrategy.create(conn, tradeApi, pubApi)
         cursor = await conn.execute(
                 db.history.select().where(db.history.c.pair == player.PAIR).limit(player.LIMIT))
         async for tick in cursor:

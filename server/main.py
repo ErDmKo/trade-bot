@@ -11,6 +11,7 @@ from .utils import load_config
 from .info_updater import setup_info_updater
 from .middlewares import setup_middlewares
 from .db import close_pg, init_pg
+from .trade.player import add_simple
 
 from server import btcelib 
 
@@ -34,6 +35,7 @@ def init():
     aiohttp_jinja2.setup(
         app, loader=jinja2.PackageLoader('server', 'templates'))
 
+    # add strategy
     # create connection to the database
     app.on_startup.append(init_pg)
     # shutdown db connection on exit
@@ -42,6 +44,7 @@ def init():
     setup_routes(app)
     setup_middlewares(app)
     setup_info_updater(app)
+    add_simple(app)
 
     return app
 

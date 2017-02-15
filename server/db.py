@@ -33,6 +33,7 @@ order = sa.Table(
     sa.Column('price', sa.Float, nullable=False),
     sa.Column('amount', sa.Float, nullable=False),
     sa.Column('pair', sa.String(200), nullable=False),
+    sa.Column('api', JSONB, nullable=True),
     sa.Column('is_sell', sa.Boolean(), nullable=False),
 )
 
@@ -61,13 +62,14 @@ async def close_pg(app):
     app['db'].close()
     await app['db'].wait_closed()
 
-async def add_order(conn, price, pair, amount, is_sell):
+async def add_order(conn, price, pair, amount, is_sell, api):
     result = await conn.execute(
         order.insert().values(
-            price=price,
-            pair=pair,
-            amount=amount,
-            is_sell = is_sell
+            price = price,
+            pair = pair,
+            amount = amount,
+            is_sell = is_sell,
+            api = api
         )
     )
     result_info = await result.first()
