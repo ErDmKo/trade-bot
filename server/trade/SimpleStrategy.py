@@ -64,6 +64,7 @@ class SimpleStrategy(object):
             amount = amount,
             is_sell = True
         )
+        print(info)
         api_resp = await self.api.call(
             'Trade',
             pair=self.PAIR,
@@ -88,6 +89,7 @@ class SimpleStrategy(object):
             amount = amount,
             is_sell = False
         )
+        print(info)
         api_resp = await self.api.call(
             'Trade',
             pair=self.PAIR,
@@ -101,10 +103,13 @@ class SimpleStrategy(object):
 
         print('buy before {} now {}'.format(self.order.price, info['price']))
 
-    def get_best_price(self, amount, price):
+    def get_best_price(self, amount, price, diretion):
         fee = (float(self.pair_info['fee']) + self.FEE) / 100
         all_money = amount * float(price)
-        return all_money * (1 - fee)
+        dellta = -1 if diretion else 1
+        out = all_money * (1 + dellta * fee)
+        # print('{} * {} * (1 {} * {}) '.format(amount, price, dellta, fee))
+        return out
 
 
     async def tick(self, resp):
@@ -116,10 +121,14 @@ class SimpleStrategy(object):
                 if amount > 0:
                     await self.sell(resp)
         else:
-            old_money = self.get_best_price(self.order.amount, self.order.price)
+            old_money = self.get_best_price(self.order.amount, self.order.price, True)
             if order.is_sell:
-                if old_money > self.get_best_price(self.order.amount, resp['asks'][0][0]):
+                best_price = self.get_best_price(self.order.amount, resp['asks'][0][0], False)
+                print('buy', old_money, resp['asks'][0][0], best_price) 
+                if old_money > best_price:
                     await self.buy(resp)
             else:
-                if old_money < self.get_best_price(self.order.amount, resp['bids'][0][0]):
+                best_price = self.get_best_price(self.order.amount, resp['bids'][0][0], False)
+                print('sell', old_money, resp['asks'][0][0], best_price) 
+                if old_money < best_price:
                     await self.sell(resp)

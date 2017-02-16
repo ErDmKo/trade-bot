@@ -1,6 +1,7 @@
 import asyncio
 import aiohttp
 import json
+import datetime
 from .utils import dumps
 from .db import history
 
@@ -11,7 +12,7 @@ async def update_info(app):
         depth_info = await app['pubapi'].call('depth', limit=50)
         balans_info = await app['privapi'].call('getInfo')
 
-        print('tik')
+        print('tik - {}'.format(datetime.datetime.now().isoformat()))
 
         if app.get('balance_socket'):
             ws = app.get('balance_socket')
