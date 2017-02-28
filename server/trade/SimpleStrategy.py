@@ -34,7 +34,9 @@ class SimpleStrategy(object):
 
     async def get_order(self):
         cursor = await self.connection.execute(
-            db.order.select().order_by(sa.desc(db.order.c.pub_date)).limit(1)
+            db.order.select()
+                .where(db.order.c.pair == self.PAIR)
+                .order_by(sa.desc(db.order.c.pub_date)).limit(1)
         )
         async for order in cursor:
             self.order = order
@@ -54,16 +56,19 @@ class SimpleStrategy(object):
         ])
 
 
+    def get_order_info(self, price, amount, is_sell):
+        return dict(
+            conn = self.connection,
+            pair = self.PAIR,
+            price = price,
+            amount = amount,
+            is_sell = is_sell
+        )
+
     async def sell(self, depth):
         amount = self.get_new_amount(self.currency['sell'])
         price = depth['bids'][0][0]
-        info = dict(
-            conn = self.connection,
-            price = price,
-            pair = self.PAIR,
-            amount = amount,
-            is_sell = True
-        )
+        info = self.get_order_info(price, amount, True)
         print(info)
         api_resp = await self.api.call(
             'Trade',
@@ -82,13 +87,7 @@ class SimpleStrategy(object):
     async def buy(self, depth):
         amount = self.get_new_amount(self.currency['buy'])
         price = depth['asks'][0][0]
-        info = dict(
-            conn = self.connection,
-            price = price,
-            pair = self.PAIR,
-            amount = amount,
-            is_sell = False
-        )
+        info = self.get_order_info(price, amount, False)
         print(info)
         api_resp = await self.api.call(
             'Trade',

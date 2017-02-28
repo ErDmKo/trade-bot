@@ -32,6 +32,7 @@ order = sa.Table(
     sa.Column('pub_date', sa.DateTime, default=sa.sql.func.now(), nullable=False),
     sa.Column('price', sa.Float, nullable=False),
     sa.Column('amount', sa.Float, nullable=False),
+    sa.Column('extra', JSONB, nullable=False),
     sa.Column('pair', sa.String(200), nullable=False),
     sa.Column('api', JSONB, nullable=True),
     sa.Column('is_sell', sa.Boolean(), nullable=False),
