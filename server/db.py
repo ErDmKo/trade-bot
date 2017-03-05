@@ -17,14 +17,17 @@ history = sa.Table(
     sa.Column('pair', sa.String(200), nullable=False),
     sa.Column('resp', JSONB, nullable=False),
 )
-'''
-history_orders = sa.Table(
-    'history_orders', meta,
+demo_order = sa.Table(
+    'demo_order', meta,
     sa.Column('id', sa.Integer, nullable=False, primary_key=True),
+    sa.Column('pub_date', sa.DateTime, default=sa.sql.func.now(), nullable=False),
     sa.Column('price', sa.Float, nullable=False),
-    sa.Column('volume', sa.Float, nullable=False),
+    sa.Column('amount', sa.Float, nullable=False),
+    sa.Column('extra', JSONB, nullable=False),
+    sa.Column('pair', sa.String(200), nullable=False),
+    sa.Column('api', JSONB, nullable=True),
+    sa.Column('is_sell', sa.Boolean(), nullable=False),
 )
-'''
 
 order = sa.Table(
     'order', meta,
@@ -87,7 +90,7 @@ async def main_test(loop):
         if command in ['drop', 'create']:
             table = sys.argv[3]
             getattr(meta, '{}_all'.format(command))(engine, tables=[meta.tables.get(table)])
-        if command == 'delete':
+        elif command == 'delete':
             table = sys.argv[3]
             with contextlib.closing(engine.connect()) as con:
                 trans = con.begin()

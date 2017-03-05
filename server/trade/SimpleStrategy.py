@@ -5,13 +5,19 @@ from server import utils
 
 class SimpleStrategy(object):
 
+    OFFSET = 0
     LIMIT = 10000
     PAIR = 'btc_usd'
     FEE = 0.1
 
     @classmethod
-    async def create(cls, connection, tradeApi, pubApi):
-        self = SimpleStrategy()
+    def init_self(cls):
+        return SimpleStrategy()
+
+    @classmethod
+    async def create(cls, connection, tradeApi, pubApi, is_demo=False):
+        self = cls.init_self()
+        self.is_demo = is_demo
         self.api = tradeApi
         self.pubApi = pubApi
         self.connection = connection
@@ -21,10 +27,14 @@ class SimpleStrategy(object):
             'buy': currency[1],
             'sell': currency[0]
         }
+        self.order_table = 'demo_order' if is_demo else 'order'
         await self.get_pair_info()
         await self.get_order()
         await self.get_balance()
         return self
+
+    def get_order_table(self):
+        return getattr(db, self.order_table)
 
     async def get_pair_info(self):
          resp = await self.pubApi.call('info')
@@ -32,11 +42,19 @@ class SimpleStrategy(object):
          self.prec = D(10) ** -self.pair_info['decimal_places']
          return self.pair_info
 
+    async def add_order(self, info):
+        result = await self.connection.execute(
+            self.get_order_table().insert().values(**info)
+        )
+        result_info = await result.first()
+        return result_info
+
     async def get_order(self):
+        order = self.get_order_table()
         cursor = await self.connection.execute(
-            db.order.select()
-                .where(db.order.c.pair == self.PAIR)
-                .order_by(sa.desc(db.order.c.pub_date)).limit(1)
+            order.select()
+                .where(order.c.pair == self.PAIR)
+                .order_by(sa.desc(order.c.pub_date)).limit(1)
         )
         async for order in cursor:
             self.order = order
@@ -58,49 +76,63 @@ class SimpleStrategy(object):
 
     def get_order_info(self, price, amount, is_sell):
         return dict(
-            conn = self.connection,
             pair = self.PAIR,
             price = price,
             amount = amount,
-            is_sell = is_sell
+            is_sell = is_sell,
+            extra = {}
         )
 
-    async def sell(self, depth):
+    async def trade(self, direction, price, amount):
+        if self.is_demo:
+            return {
+                "demo_order": "1",
+                "funds": self.balance
+            }
+        return await self.api.call(
+            'Trade',
+            pair=self.PAIR,
+            type=direction,
+            rate=price,
+            amount = amount
+        )
+
+    async def sell(self, depth, old_order=False):
         amount = self.get_new_amount(self.currency['sell'])
         price = depth['bids'][0][0]
         info = self.get_order_info(price, amount, True)
-        print(info)
-        api_resp = await self.api.call(
-            'Trade',
-            pair=self.PAIR,
-            type='sell',
-            rate=price,
-            amount = amount
-        )
+        api_resp = await self.trade('sell', price, amount)
         self.balance = api_resp['funds']
         info['api'] = utils.dumps(api_resp)
-        order = await db.add_order(**info)
+        order = await self.add_order(info)
 
-        if self.order:
-            print('sell before {} now {}'.format(self.order.price, info['price']))
+        if self.order or old_order:
+            print('sell before {} now {}'
+                    .format(
+                        self.order.price if self.order else old_order.price,
+                        info['price'],
+                    )
+                )
+        else:
+            print('sell before init now {}'.format(info['price']))
+        return order
 
-    async def buy(self, depth):
+    async def buy(self, depth, old_order=False):
         amount = self.get_new_amount(self.currency['buy'])
         price = depth['asks'][0][0]
         info = self.get_order_info(price, amount, False)
-        print(info)
-        api_resp = await self.api.call(
-            'Trade',
-            pair=self.PAIR,
-            type='buy',
-            rate=price,
-            amount = amount
-        )
+        api_resp = await self.trade('buy', price, amount);
         self.balance = api_resp['funds']
         info['api'] = utils.dumps(api_resp)
-        order = await db.add_order(**info)
+        order = await self.add_order(info)
 
-        print('buy before {} now {}'.format(self.order.price, info['price']))
+        if self.order or old_order:
+            print('buy before {} now {}'.format(
+                self.order.price if self.order else old_order.price,
+                info['price'], 
+                )
+            )
+        return order
 
     def get_best_price(self, amount, price, diretion):
         fee = (float(self.pair_info['fee']) + self.FEE) / 100
@@ -115,19 +147,22 @@ class SimpleStrategy(object):
         self.depth = resp
         order = await self.get_order()
         if not order:
-            print ('init')
+            print ('init order is {}'.format(order))
             for currency, amount in self.balance.items():
                 if amount > 0:
                     await self.sell(resp)
+                    return
         else:
             old_money = self.get_best_price(self.order.amount, self.order.price, True)
             if order.is_sell:
                 best_price = self.get_best_price(self.order.amount, resp['asks'][0][0], False)
-                print('buy', old_money, resp['asks'][0][0], best_price) 
+                if not self.is_demo:
+                    print('buy', old_money, resp['asks'][0][0], best_price) 
                 if old_money > best_price:
                     await self.buy(resp)
             else:
                 best_price = self.get_best_price(self.order.amount, resp['bids'][0][0], False)
-                print('sell', old_money, resp['asks'][0][0], best_price) 
+                if not self.is_demo:
+                    print('sell', old_money, resp['bids'][0][0], best_price) 
                 if old_money < best_price:
                     await self.sell(resp)

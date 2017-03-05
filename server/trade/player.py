@@ -4,6 +4,7 @@ from server import db
 from server import utils 
 from ..btcelib import TradeAPIv1, PublicAPIv3
 from .SimpleStrategy import SimpleStrategy
+from .ThreadStrategy import ThreadStrategy
 
 async def load_strategy(app):
     while True:
@@ -37,9 +38,17 @@ async def main_test(loop):
             'Secret': conf['api']['API_SECRET']
             })
         pubApi = PublicAPIv3('btc_usd')
-        player = await SimpleStrategy.create(conn, tradeApi, pubApi)
+        player = await ThreadStrategy.create(conn, tradeApi, pubApi, True)
+        #player = await SimpleStrategy.create(conn, tradeApi, pubApi, True)
+        clear_order = await conn.execute(db.demo_order.delete())
         cursor = await conn.execute(
-                db.history.select().where(db.history.c.pair == player.PAIR).limit(player.LIMIT))
+                db.history
+                    .select()
+                    .where(db.history.c.pair == player.PAIR)
+                    .order_by(db.history.c.pub_date.desc())
+                    .offset(player.OFFSET)
+                    .limit(player.LIMIT)
+                )
         async for tick in cursor:
             await player.tick(json.loads(tick.resp))
 
