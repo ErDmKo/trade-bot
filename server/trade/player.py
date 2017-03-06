@@ -39,13 +39,13 @@ async def main_test(loop):
             })
         pubApi = PublicAPIv3('btc_usd')
         player = await ThreadStrategy.create(conn, tradeApi, pubApi, True)
-        #player = await SimpleStrategy.create(conn, tradeApi, pubApi, True)
+        # player = await SimpleStrategy.create(conn, tradeApi, pubApi, True)
         clear_order = await conn.execute(db.demo_order.delete())
         cursor = await conn.execute(
                 db.history
                     .select()
                     .where(db.history.c.pair == player.PAIR)
-                    .order_by(db.history.c.pub_date.desc())
+                    .order_by(db.history.c.pub_date)
                     .offset(player.OFFSET)
                     .limit(player.LIMIT)
                 )

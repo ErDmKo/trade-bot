@@ -97,6 +97,20 @@ class SimpleStrategy(object):
             amount = amount
         )
 
+    def print_order(self, info, direction, old_order):
+        if old_order:
+            print('{} before {} now {}'.format(
+                direction,
+                old_order.price,
+                info['price'],
+                )
+            )
+        else:
+            print('{} before init now {}'.format(
+                direction,
+                info['price'])
+            )
+
     async def sell(self, depth, old_order=False):
         amount = self.get_new_amount(self.currency['sell'])
         price = depth['bids'][0][0]
@@ -106,16 +120,10 @@ class SimpleStrategy(object):
         info['api'] = utils.dumps(api_resp)
         order = await self.add_order(info)
 
-        if self.order or old_order:
-            print('sell before {} now {}'
-                    .format(
-                        self.order.price if self.order else old_order.price,
-                        info['price'],
-                    )
-                )
-        else:
-            print('sell before init now {}'.format(info['price']))
+        self.print_order(info, 'sell', old_order)
+
         return order
+
 
     async def buy(self, depth, old_order=False):
         amount = self.get_new_amount(self.currency['buy'])
@@ -126,12 +134,8 @@ class SimpleStrategy(object):
         info['api'] = utils.dumps(api_resp)
         order = await self.add_order(info)
 
-        if self.order or old_order:
-            print('buy before {} now {}'.format(
-                self.order.price if self.order else old_order.price,
-                info['price'], 
-                )
-            )
+        self.print_order(info, 'buy', old_order)
+
         return order
 
     def get_best_price(self, amount, price, diretion):
@@ -142,6 +146,8 @@ class SimpleStrategy(object):
         # print('{} * {} * (1 {} * {}) '.format(amount, price, dellta, fee))
         return out
 
+    def get_stat(self):
+        return self.order
 
     async def tick(self, resp):
         self.depth = resp
@@ -159,10 +165,10 @@ class SimpleStrategy(object):
                 if not self.is_demo:
                     print('buy', old_money, resp['asks'][0][0], best_price) 
                 if old_money > best_price:
-                    await self.buy(resp)
+                    await self.buy(resp, self.order)
             else:
-                best_price = self.get_best_price(self.order.amount, resp['bids'][0][0], False)
+                best_price = self.get_best_price(self.order.amount, resp['bids'][0][0], True)
                 if not self.is_demo:
                     print('sell', old_money, resp['bids'][0][0], best_price) 
                 if old_money < best_price:
-                    await self.sell(resp)
+                    await self.sell(resp, self.order)
