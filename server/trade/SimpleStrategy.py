@@ -27,6 +27,10 @@ class SimpleStrategy(object):
             'buy': currency[1],
             'sell': currency[0]
         }
+        self.directions = {
+            currency[1]: 'buy',
+            currency[0]: 'sell' 
+        }
         self.order_table = 'demo_order' if is_demo else 'order'
         await self.get_pair_info()
         await self.get_order()
@@ -89,13 +93,15 @@ class SimpleStrategy(object):
                 "demo_order": "1",
                 "funds": self.balance
             }
-        return await self.api.call(
+        api_resp = await self.api.call(
             'Trade',
             pair=self.PAIR,
             type=direction,
             rate=price,
             amount = amount
         )
+        self.balance = api_resp['funds']
+        return api_resp
 
     def print_order(self, info, direction, old_order):
         if old_order:
@@ -116,7 +122,6 @@ class SimpleStrategy(object):
         price = depth['bids'][0][0]
         info = self.get_order_info(price, amount, True)
         api_resp = await self.trade('sell', price, amount)
-        self.balance = api_resp['funds']
         info['api'] = utils.dumps(api_resp)
         order = await self.add_order(info)
 
@@ -130,7 +135,6 @@ class SimpleStrategy(object):
         price = depth['asks'][0][0]
         info = self.get_order_info(price, amount, False)
         api_resp = await self.trade('buy', price, amount);
-        self.balance = api_resp['funds']
         info['api'] = utils.dumps(api_resp)
         order = await self.add_order(info)
 

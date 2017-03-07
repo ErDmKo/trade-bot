@@ -1,5 +1,6 @@
 from server import db
 import sqlalchemy as sa
+from decimal import Decimal as D
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
 from .SimpleStrategy import SimpleStrategy
@@ -23,6 +24,23 @@ class OrderThread(object):
     def get_order(self):
         return self.order
 
+    async def merge(self, order):
+        order_table = self.table
+        return await self.connection.execute(
+                order_table
+                    .update()
+                    .where(order_table.c.id == self.order.id)
+                    .values(
+                        extra = sa.cast(
+                            sa.cast(func.coalesce(order_table.c.extra, '{}'), JSONB)
+                            .concat(func.jsonb_build_object(
+                                self.FLAG_NAME, '1',
+                                'merged', order.get('id')
+                            )), JSONB
+                        )
+                    ) 
+        )
+
     async def nextStep(self, nextOrder=False):
         order_table = self.table
         return await self.connection.execute(
@@ -42,9 +60,11 @@ class OrderThread(object):
 
 class ThreadStrategy(SimpleStrategy):
 
-    LIMIT = 10000
+    LIMIT = 100000
     PAIR = 'btc_usd'
     FEE = 0.1
+
+    THRESHOLD = 0.01
 
     FLAG_NAME = 'is_finished'
 
@@ -98,18 +118,39 @@ class ThreadStrategy(SimpleStrategy):
             old_order = old_order.get_order()
         super().print_order(info, direction, old_order)
 
+    async def start_new_thread(self, resp, direction=False):
+        order = False
+        for currency, amount in self.balance.items():
+            if amount > 0 and currency in self.directions:
+                if not direction:
+                    direction = self.directions[currency]
+                    order = await getattr(self, direction)(resp)
+                elif self.currency[direction] == currency:
+                    order = await getattr(self, direction)(resp)
+
+                if order:
+                    print('start new thread currency {} amount {} direction {}'.format(
+                        currency,
+                        amount,
+                        direction
+                    ))
+                    return
+
     async def tick(self, resp):
         self.depth = resp
         await self.get_order()
+        sell_margins = []
+        buy_margins = []
 
         if not len(self.orders):
-            print('init')
-            for currency, amount in self.balance.items():
-                if amount > 0:
-                    await self.sell(resp)
-                    return
+            return await self.start_new_thread(resp, 'sell')
         else:
+            old_order = False
             for order in self.orders:
+
+                if old_order and old_order.get('price') == order.get('price'):
+                    await old_order.merge(order)
+
                 old_money = self.get_best_price(
                     order.get('amount'),
                     order.get('price'),
@@ -122,7 +163,15 @@ class ThreadStrategy(SimpleStrategy):
                         False
                     )
                     if not self.is_demo:
-                        print('buy', old_money, resp['asks'][0][0], best_price) 
+                        print(
+                            'buy', 
+                            old_money,
+                            resp['asks'][0][0],
+                            best_price
+                        ) 
+                    margin = D(1 - (old_money / best_price)).quantize(self.prec)
+                    sell_margins.append(margin)
+
                     if old_money > best_price:
                         await self.buy(resp, order)
                 else:
@@ -132,6 +181,23 @@ class ThreadStrategy(SimpleStrategy):
                         True
                     )
                     if not self.is_demo:
-                        print('sell', old_money, resp['bids'][0][0], best_price) 
+                        print(
+                            'sell',
+                            old_money,
+                            resp['bids'][0][0],
+                            best_price
+                        ) 
+                    margin = D((old_money / best_price) - 1).quantize(self.prec)
+                    buy_margins.append(margin)
                     if old_money < best_price:
                         await self.sell(resp, order)
+                old_order = order
+
+            if len(sell_margins) and min(sell_margins) > self.THRESHOLD:
+                await self.start_new_thread(resp, 'sell')
+            if len(buy_margins) and min(buy_margins) > self.THRESHOLD:
+                await self.start_new_thread(resp, 'buy')
+
+            sell_margins = []
+            buy_margins = []
+
