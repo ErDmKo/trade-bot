@@ -162,14 +162,16 @@ class ThreadStrategy(SimpleStrategy):
                         resp['asks'][0][0],
                         False
                     )
+                    margin = D(1 - (old_money / best_price)).quantize(self.prec)
                     if not self.is_demo:
                         print(
-                            'buy', 
-                            old_money,
-                            resp['asks'][0][0],
-                            best_price
-                        ) 
-                    margin = D(1 - (old_money / best_price)).quantize(self.prec)
+                            'Try to buy - previous sell {} now {} with fee {} marign {}'.format(
+                                old_money,
+                                resp['asks'][0][0],
+                                best_price,
+                                margin
+                            )
+                        )
                     sell_margins.append(margin)
 
                     if old_money > best_price:
@@ -180,14 +182,16 @@ class ThreadStrategy(SimpleStrategy):
                         resp['bids'][0][0],
                         True
                     )
+                    margin = D((old_money / best_price) - 1).quantize(self.prec)
                     if not self.is_demo:
                         print(
-                            'sell',
-                            old_money,
-                            resp['bids'][0][0],
-                            best_price
-                        ) 
-                    margin = D((old_money / best_price) - 1).quantize(self.prec)
+                            'Try to sell - previous buy {} now {} with fee {} marign {}'.format(
+                                old_money,
+                                resp['bids'][0][0],
+                                best_price,
+                                margin
+                            )
+                        )
                     buy_margins.append(margin)
                     if old_money < best_price:
                         await self.sell(resp, order)

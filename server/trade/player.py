@@ -16,7 +16,7 @@ async def load_strategy(app):
         async with engine.acquire() as conn:
             tradeApi = app['privapi']
             pubApi = PublicAPIv3('btc_usd')
-            app['strategy'] = await SimpleStrategy.create(conn, tradeApi, pubApi)
+            app['strategy'] = await ThreadStrategy.create(conn, tradeApi, pubApi)
         break
 
 async def on_shutdown(app):

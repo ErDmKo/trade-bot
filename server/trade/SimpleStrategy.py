@@ -74,7 +74,7 @@ class SimpleStrategy(object):
     def get_new_amount(self, currency):
         return max([
             self.pair_info['min_amount'],
-            D(self.balance[currency]/1000).quantize(self.prec)
+            D(self.balance[self.currency['sell']]/1000).quantize(self.prec)
         ])
 
 
@@ -118,8 +118,19 @@ class SimpleStrategy(object):
             )
 
     async def sell(self, depth, old_order=False):
-        amount = self.get_new_amount(self.currency['sell'])
+        currency = self.currency['sell']
+        await self.get_balance(currency)
+        print('balance {} {}'.format(self.balance[currency], currency))
+        amount = self.get_new_amount(currency)
         price = depth['bids'][0][0]
+        if self.balance[currency] < price * amount:
+            print('Low balance {} {} need more {} '.format(
+                self.balance[currency],
+                currency,
+                price * amount
+                )
+            )
+            return
         info = self.get_order_info(price, amount, True)
         api_resp = await self.trade('sell', price, amount)
         info['api'] = utils.dumps(api_resp)
@@ -131,9 +142,19 @@ class SimpleStrategy(object):
 
 
     async def buy(self, depth, old_order=False):
-        amount = self.get_new_amount(self.currency['buy'])
+        currency = self.currency['buy']
+        await self.get_balance(currency)
+        amount = self.get_new_amount(currency)
         price = depth['asks'][0][0]
         info = self.get_order_info(price, amount, False)
+        if self.balance[currency] < price * amount:
+            print('Low balance {} {} need more {} '.format(
+                self.balance[currency],
+                currency,
+                amount
+                )
+            )
+            return
         api_resp = await self.trade('buy', price, amount);
         info['api'] = utils.dumps(api_resp)
         order = await self.add_order(info)

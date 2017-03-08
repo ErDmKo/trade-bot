@@ -75,6 +75,7 @@ async def update_info(app):
                     try:
                         await app['strategy'].tick(info)
                     except Exception as e:
+                        print('Error')
                         print_exception()
         await asyncio.sleep(2)
     
