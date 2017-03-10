@@ -63,7 +63,7 @@ class OrderThread(object):
 
 class ThreadStrategy(SimpleStrategy):
 
-    LIMIT = 100000
+    LIMIT = 10000
     PAIR = 'btc_usd'
     FEE = 0.1
 
@@ -127,12 +127,14 @@ class ThreadStrategy(SimpleStrategy):
             if amount > 0 and currency in self.directions:
                 if not direction:
                     direction = self.directions[currency]
+                    print('Try to start new thread {}'.format(direction))
                     order = await getattr(self, direction)(resp)
                 elif self.currency[direction] == currency:
+                    print('Try to start new thread {}'.format(direction))
                     order = await getattr(self, direction)(resp)
 
                 if order:
-                    print('start new thread currency {} amount {} direction {}'.format(
+                    print('New thread was started currency {} amount {} direction {}'.format(
                         currency,
                         amount,
                         direction
@@ -146,6 +148,7 @@ class ThreadStrategy(SimpleStrategy):
         buy_margins = []
 
         if not len(self.orders):
+            print('init')
             return await self.start_new_thread(resp, 'sell')
         else:
             old_order = False
@@ -201,8 +204,16 @@ class ThreadStrategy(SimpleStrategy):
                 old_order = order
 
             if len(sell_margins) and min(sell_margins) > self.THRESHOLD:
+                print('Sell margin {} biger then {}'.format(
+                    min(sell_margins),
+                    self.THRESHOLD
+                ))
                 await self.start_new_thread(resp, 'sell')
             if len(buy_margins) and min(buy_margins) > self.THRESHOLD:
+                print('Buy margin {} biger then {}'.format(
+                    min(buy_margins),
+                    self.THRESHOLD
+                ))
                 await self.start_new_thread(resp, 'buy')
 
             sell_margins = []
