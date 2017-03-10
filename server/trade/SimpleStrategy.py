@@ -37,6 +37,9 @@ class SimpleStrategy(object):
         await self.get_balance()
         return self
 
+    def print(self, string):
+        print(string)
+
     def get_order_table(self):
         return getattr(db, self.order_table)
 
@@ -105,14 +108,14 @@ class SimpleStrategy(object):
 
     def print_order(self, info, direction, old_order):
         if old_order:
-            print('{} before {} now {}'.format(
+            self.print('{} before {} now {}'.format(
                 direction,
                 old_order.price,
                 info['price'],
                 )
             )
         else:
-            print('{} before init now {}'.format(
+            self.print('{} before init now {}'.format(
                 direction,
                 info['price'])
             )
@@ -123,7 +126,7 @@ class SimpleStrategy(object):
         amount = self.get_new_amount(currency)
         price = depth['bids'][0][0]
         if self.balance[currency] < amount:
-            print('Low balance {} {} need more {} '.format(
+            self.print('Low balance {} {} need more {} '.format(
                 self.balance[currency],
                 currency,
                 price * amount
@@ -147,7 +150,7 @@ class SimpleStrategy(object):
         price = depth['asks'][0][0]
         info = self.get_order_info(price, amount, False)
         if self.balance[currency] < amount:
-            print('Low balance {} {} need more {} '.format(
+            self.print('Low balance {} {} need more {} '.format(
                 self.balance[currency],
                 currency,
                 amount
@@ -167,7 +170,7 @@ class SimpleStrategy(object):
         all_money = amount * float(price)
         dellta = -1 if diretion else 1
         out = all_money * (1 + dellta * fee)
-        # print('{} * {} * (1 {} * {}) '.format(amount, price, dellta, fee))
+        # self.print('{} * {} * (1 {} * {}) '.format(amount, price, dellta, fee))
         return out
 
     def get_stat(self):
@@ -177,7 +180,7 @@ class SimpleStrategy(object):
         self.depth = resp
         order = await self.get_order()
         if not order:
-            print ('init order is {}'.format(order))
+            self.print('init order is {}'.format(order))
             for currency, amount in self.balance.items():
                 if amount > 0:
                     await self.sell(resp)
@@ -187,12 +190,12 @@ class SimpleStrategy(object):
             if order.is_sell:
                 best_price = self.get_best_price(self.order.amount, resp['asks'][0][0], False)
                 if not self.is_demo:
-                    print('buy', old_money, resp['asks'][0][0], best_price) 
+                    self.print('buy', old_money, resp['asks'][0][0], best_price) 
                 if old_money > best_price:
                     await self.buy(resp, self.order)
             else:
                 best_price = self.get_best_price(self.order.amount, resp['bids'][0][0], True)
                 if not self.is_demo:
-                    print('sell', old_money, resp['bids'][0][0], best_price) 
+                    self.print('sell', old_money, resp['bids'][0][0], best_price) 
                 if old_money < best_price:
                     await self.sell(resp, self.order)
