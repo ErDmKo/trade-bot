@@ -42,6 +42,9 @@ class OrderThread(object):
         )
 
     async def nextStep(self, nextOrder=False):
+        if not nextOrder:
+            raise Exception('WTF dude?!?!')
+
         order_table = self.table
         return await self.connection.execute(
                 order_table
@@ -185,7 +188,7 @@ class ThreadStrategy(SimpleStrategy):
                     margin = D((old_money / best_price) - 1).quantize(self.prec)
                     if not self.is_demo:
                         print(
-                            'Try to sell - previous buy {} now {} with fee {} marign {}'.format(
+                            'Try to sell - previous buy {} now {} need {} marign {}'.format(
                                 old_money,
                                 resp['bids'][0][0],
                                 best_price,
