@@ -75,6 +75,12 @@ class ThreadStrategy(SimpleStrategy):
     def init_self(cls):
         return ThreadStrategy()
 
+    def get_threshhold(self, depth):
+        return max(
+            self.THRESHOLD,
+            1 - depth['bids'][0][0] / depth['asks'][0][0] 
+        )
+
     async def get_order(self):
         self.order = None
         self.orders = []
@@ -106,13 +112,13 @@ class ThreadStrategy(SimpleStrategy):
 
     async def buy(self, depth, old_order=False):
         new_order = await super().buy(depth, old_order)
-        if old_order:
+        if old_order and new_order:
             result = await old_order.nextStep(new_order)
         return new_order
 
     async def sell(self, depth, old_order=False):
         new_order = await super().sell(depth, old_order)
-        if old_order:
+        if old_order and new_order:
             result = await old_order.nextStep(new_order)
         return new_order
 
@@ -203,16 +209,18 @@ class ThreadStrategy(SimpleStrategy):
                         await self.sell(resp, order)
                 old_order = order
 
-            if len(sell_margins) and min(sell_margins) > self.THRESHOLD:
+            thresh_hold = self.get_threshhold(resp)
+            self.print('Threshhold {}'.format(thresh_hold))
+            if len(sell_margins) and min(sell_margins) > thresh_hold:
                 self.print('Sell margin {} biger then {}'.format(
                     min(sell_margins),
-                    self.THRESHOLD
+                    thresh_hold
                 ))
                 await self.start_new_thread(resp, 'sell')
-            if len(buy_margins) and min(buy_margins) > self.THRESHOLD:
+            if len(buy_margins) and min(buy_margins) > thresh_hold:
                 self.print('Buy margin {} biger then {}'.format(
                     min(buy_margins),
-                    self.THRESHOLD
+                    thresh_hold
                 ))
                 await self.start_new_thread(resp, 'buy')
 

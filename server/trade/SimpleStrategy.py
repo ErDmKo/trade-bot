@@ -129,7 +129,7 @@ class SimpleStrategy(object):
             self.print('Low balance {} {} need more {} '.format(
                 self.balance[currency],
                 currency,
-                price * amount
+                amount
                 )
             )
             return
