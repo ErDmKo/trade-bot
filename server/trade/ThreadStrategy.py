@@ -75,10 +75,13 @@ class ThreadStrategy(SimpleStrategy):
     def init_self(cls):
         return ThreadStrategy()
 
+    def get_market_threshhold(self, depth):
+        return 1 - (depth['bids'][0][0] / depth['asks'][0][0])
+
     def get_threshhold(self, depth):
         return max(
             self.THRESHOLD,
-            1 - depth['bids'][0][0] / depth['asks'][0][0] 
+            self.get_market_threshhold(depth) 
         )
 
     async def get_order(self):
@@ -175,7 +178,7 @@ class ThreadStrategy(SimpleStrategy):
                         False
                     )
                     margin = D(1 - (old_money / best_price)).quantize(self.prec)
-                    if not self.is_demo:
+                    if not self.is_demo and margin < self.get_threshhold(resp):
                         self.print(
                             'Try to buy - previous sell {} now {} with fee {} marign {}'.format(
                                 old_money,
@@ -195,7 +198,7 @@ class ThreadStrategy(SimpleStrategy):
                         True
                     )
                     margin = D((old_money / best_price) - 1).quantize(self.prec)
-                    if not self.is_demo:
+                    if not self.is_demo and margin < self.get_threshhold(resp):
                         self.print(
                             'Try to sell - previous buy {} now {} need {} marign {}'.format(
                                 old_money,
@@ -210,7 +213,12 @@ class ThreadStrategy(SimpleStrategy):
                 old_order = order
 
             thresh_hold = self.get_threshhold(resp)
-            self.print('Threshhold {}'.format(thresh_hold))
+            self.print('Threshhold {} market {} {} / {}'.format(
+                thresh_hold,
+                self.get_market_threshhold(resp),
+                resp['bids'][0][0], 
+                resp['asks'][0][0]
+            ))
             if len(sell_margins) and min(sell_margins) > thresh_hold:
                 self.print('Sell margin {} biger then {}'.format(
                     min(sell_margins),
