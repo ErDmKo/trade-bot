@@ -122,7 +122,6 @@ class SimpleStrategy(object):
 
     async def sell(self, depth, old_order=False):
         currency = self.currency['sell']
-        await self.get_balance(currency)
         amount = self.get_new_amount(currency)
         price = depth['bids'][0][0]
         if self.balance[currency] < amount:
@@ -145,15 +144,14 @@ class SimpleStrategy(object):
 
     async def buy(self, depth, old_order=False):
         currency = self.currency['buy']
-        await self.get_balance(currency)
         amount = self.get_new_amount(currency)
         price = depth['asks'][0][0]
         info = self.get_order_info(price, amount, False)
-        if self.balance[currency] < amount:
+        if self.balance[currency] < float(price) * amount:
             self.print('Low balance {} {} need more {} '.format(
                 self.balance[currency],
                 currency,
-                amount
+                (float(price) * amount) - float(self.balance[currency])
                 )
             )
             return
@@ -178,6 +176,7 @@ class SimpleStrategy(object):
 
     async def tick(self, resp):
         self.depth = resp
+        await self.get_balance()
         order = await self.get_order()
         if not order:
             self.print('init order is {}'.format(order))

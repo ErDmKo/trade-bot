@@ -153,6 +153,7 @@ class ThreadStrategy(SimpleStrategy):
     async def tick(self, resp):
         self.depth = resp
         await self.get_order()
+        await self.get_balance()
         sell_margins = []
         buy_margins = []
 
@@ -178,7 +179,7 @@ class ThreadStrategy(SimpleStrategy):
                         False
                     )
                     margin = D(1 - (old_money / best_price)).quantize(self.prec)
-                    if not self.is_demo and margin < self.get_threshhold(resp):
+                    if not self.is_demo and abs(margin) < self.get_threshhold(resp):
                         self.print(
                             'Try to buy - previous sell {} now {} with fee {} marign {}'.format(
                                 old_money,
@@ -198,7 +199,7 @@ class ThreadStrategy(SimpleStrategy):
                         True
                     )
                     margin = D((old_money / best_price) - 1).quantize(self.prec)
-                    if not self.is_demo and margin < self.get_threshhold(resp):
+                    if not self.is_demo and abs(margin) < self.get_threshhold(resp):
                         self.print(
                             'Try to sell - previous buy {} now {} need {} marign {}'.format(
                                 old_money,
