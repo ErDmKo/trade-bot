@@ -24,7 +24,7 @@ export class PairComponent {
     }
     ngOnInit () {
         this.pairService
-            .subPairs()
+            .getWsData()
             .subscribe(
                 pairs => {
                     this.pairs = pairs

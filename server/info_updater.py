@@ -40,7 +40,7 @@ async def update_info(app):
         channels = app['socket_channels']
 
         channels['balance_socket'].broadcast(balans_info)
-        channels['depth_info'].broadcast(depth_info)
+        channels['depth_socket'].broadcast(depth_info)
         channels['pair_socket'].broadcast(pair_info)
 
         if app.get('db'):

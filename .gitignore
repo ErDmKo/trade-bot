@@ -1,6 +1,7 @@
 .env
 *.pyc
 uwsgi.ini
+npm-debug.log
 static/
 local.yaml
 .DS_Store

@@ -2,10 +2,26 @@ import json
 import yaml
 import pathlib
 import aiohttp
+from collections import defaultdict
 from decimal import Decimal
 from datetime import date as dateFormat
 
+class SharedKeyDict(defaultdict):
+
+    def __missing__(self, key):
+        if self.default_factory:
+            dict.__setitem__(self, key, self.default_factory(key))
+            return self[key]
+        else:
+            super().__missing__(key)
+
 class BList(list):
+
+    def __init__(self, app, key, *ar, **kw):
+        super().__init__(*ar, **kw)
+        self.app = app
+        self.key = key
+
     def broadcast(self, message):
         for waiter in self:
             try:
@@ -13,6 +29,7 @@ class BList(list):
             except RuntimeError as e:
                 if str(e) == 'websocket connection is closing':
                     print('close client')
+                    self.app['socket_channels'][self.key].remove(waiter)
                 else:
                     print('client ERROR')
                     raise e
