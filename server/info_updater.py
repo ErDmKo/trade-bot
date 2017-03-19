@@ -24,50 +24,7 @@ async def update_info(app):
 
         print('tik - {}'.format(datetime.datetime.now().isoformat()))
 
-        if app.get('balance_socket'):
-            ws = app.get('balance_socket')
-
-            try:
-                ws.send_json(balans_info, dumps = dumps)
-            except RuntimeError as e:
-                if str(e) == 'websocket connection is closing':
-                    print('close client')
-                else:
-                    print('client ERROR')
-                    raise e
-
-        if app.get('depth_socket'):
-            ws = app.get('depth_socket')
-            try:
-                ws.send_json(depth_info, dumps = dumps)
-            except RuntimeError as e:
-                if str(e) == 'websocket connection is closing':
-                    print('close client')
-                else:
-                    print('client ERROR')
-                    raise e
-
-        if app.get('pair_socket'):
-            ws = app.get('pair_socket')
-            try:
-                ws.send_json(pair_info, dumps = dumps)
-            except RuntimeError as e:
-                if str(e) == 'websocket connection is closing':
-                    print('close client')
-                else:
-                    print('client ERROR')
-                    raise e
-
-    
-        if app.get('db'):
-            async with app['db'].acquire() as conn:
-                for pair, info in depth_info.items():
-                    result = await conn.execute(
-                        history.insert().values(
-                            pair = pair,
-                            resp = dumps(info)
-                        )
-                    )
+        '''
         if app.get('strategy'):
             strategy = app.get('strategy')
             for pair, info in depth_info.items():
@@ -77,6 +34,24 @@ async def update_info(app):
                     except Exception as e:
                         print('Error')
                         print_exception()
+        '''
+
+
+        channels = app['socket_channels']
+
+        channels['balance_socket'].broadcast(balans_info)
+        channels['depth_info'].broadcast(depth_info)
+        channels['pair_socket'].broadcast(pair_info)
+
+        if app.get('db'):
+            async with app['db'].acquire() as conn:
+                for pair, info in depth_info.items():
+                    result = await conn.execute(
+                        history.insert().values(
+                            pair = pair,
+                            resp = dumps(info)
+                        )
+                    )
         await asyncio.sleep(2)
     
 async def on_shutdown(app):

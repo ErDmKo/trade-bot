@@ -1,8 +1,37 @@
 import json
 import yaml
 import pathlib
+import aiohttp
 from decimal import Decimal
 from datetime import date as dateFormat
+
+class BList(list):
+    def broadcast(self, message):
+        for waiter in self:
+            try:
+                waiter.send_json(message, dumps=dumps)
+            except RuntimeError as e:
+                if str(e) == 'websocket connection is closing':
+                    print('close client')
+                else:
+                    print('client ERROR')
+                    raise e
+
+async def handle_socket(ws, api, method):
+
+    async for msg in ws:
+        if msg.type == aiohttp.WSMsgType.TEXT:
+            if msg.data == 'connect':
+                info = await api.call(method)
+                ws.send_json(info, dumps = dumps)
+            elif msg.data == 'close':
+                await ws.close()
+            else:
+                print(msg.data)
+        elif msg.type == aiohttp.WSMsgType.ERROR:
+            print('ws connection closed with exception %s' %
+                  ws.exception())
+    return ws
 
 def load_config(fname=str(pathlib.Path('.') / 'config' / 'base.yaml')):
     with open(fname, 'rt') as f:

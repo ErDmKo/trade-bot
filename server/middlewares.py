@@ -20,9 +20,11 @@ async def handle_500(request, response):
 def error_pages(overrides):
     async def middleware(app, handler):
         async def middleware_handler(request):
+            override = None
             try:
                 response = await handler(request)
-                override = overrides.get(response.status)
+                if response:
+                    override = overrides.get(response.status)
                 if override is None:
                     return response
                 else:

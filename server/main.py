@@ -7,7 +7,8 @@ import jinja2
 import aiohttp_jinja2
 from aiohttp import web
 from .routes import setup_routes
-from .utils import load_config
+from .utils import load_config, BList
+from collections import defaultdict
 from .info_updater import setup_info_updater
 from .middlewares import setup_middlewares
 from .db import close_pg, init_pg
@@ -30,6 +31,7 @@ def init():
         'Key': conf['api']['API_KEY'],
         'Secret': conf['api']['API_SECRET']
     })
+    app['socket_channels'] = defaultdict(BList)
 
     # setup Jinja2 template renderer
     aiohttp_jinja2.setup(

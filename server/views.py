@@ -1,7 +1,8 @@
 import aiohttp_jinja2
+import asyncio
 import aiohttp
 from aiohttp import web
-from .utils import dumps
+from .utils import dumps, handle_socket
 from . import db
 
 @aiohttp_jinja2.template('index.html')
@@ -27,7 +28,7 @@ async def delete_orders(request):
 
 async def get_orders(request):
     async with request.app['db'].acquire() as conn:
-        cursor = await conn.execute(db.order.select())
+        cursor = await conn.execute(db.order.select().limit(10))
         orders = await cursor.fetchall()
         return web.json_response({
             'orders': [dict(q) for q in orders]
@@ -47,60 +48,20 @@ async def order(request):
 async def ws_balance(request):
     ws = web.WebSocketResponse()
     await ws.prepare(request)
-    request.app['balance_socket'] = ws
-
-    async for msg in ws:
-        if msg.type == aiohttp.WSMsgType.TEXT:
-            if msg.data == 'connect':
-                info = await request.app['privapi'].call('getInfo')
-                ws.send_json(info, dumps = dumps)
-            elif msg.data == 'close':
-                await ws.close()
-            else:
-                print(msg.data)
-        elif msg.type == aiohttp.WSMsgType.ERROR:
-            print('ws connection closed with exception %s' %
-                  ws.exception())
-
+    channel = request.app['socket_channels']['balance_socket']
+    channel.append(ws)
+    return await handle_socket(ws, request.app['privapi'], 'getInfo') 
 
 async def ws_pairs(request):
     ws = web.WebSocketResponse()
     await ws.prepare(request)
-    request.app['pair_socket'] = ws
-    async for msg in ws:
-        if msg.type == aiohttp.WSMsgType.TEXT:
-            if msg.data == 'connect':
-                info = await request.app['pubapi'].call('ticker')
-                ws.send_json(info, dumps = dumps)
-            elif msg.data == 'close':
-                await ws.close()
-            else:
-                print(msg.data)
-        elif msg.type == aiohttp.WSMsgType.ERROR:
-            print('ws connection closed with exception %s' %
-                  ws.exception())
-
-    print('websocket connection closed')
-
-    return ws
+    channel = request.app['socket_channels']['pair_socket']
+    channel.append(ws)
+    return await handle_socket(ws, request.app['pubapi'], 'ticker') 
 
 async def ws_order_book(request):
     ws = web.WebSocketResponse()
     await ws.prepare(request)
-    request.app['depth_socket'] = ws
-    async for msg in ws:
-        if msg.type == aiohttp.WSMsgType.TEXT:
-            if msg.data == 'connect':
-                info = await request.app['pubapi'].call('depth')
-                ws.send_json(info, dumps = dumps)
-            elif msg.data == 'close':
-                await ws.close()
-            else:
-                print(msg.data)
-        elif msg.type == aiohttp.WSMsgType.ERROR:
-            print('ws connection closed with exception %s' %
-                  ws.exception())
-
-    print('websocket connection closed')
-
-    return ws
+    channel = request.app['socket_channels']['depth_socket']
+    channel.append(ws)
+    return await handle_socket(ws, request.app['pubapi'], 'depth') 
