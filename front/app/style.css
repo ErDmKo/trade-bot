@@ -1,4 +1,9 @@
 .main {
+    &__head {
+        font-size: 12px;
+        color: #fff;
+        background: #000;
+    }
     &__cols {
         display: flex;
     }

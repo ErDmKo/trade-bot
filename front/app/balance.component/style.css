@@ -3,7 +3,22 @@
     padding: 10px;
     &__header {
         font-size: 20px;
+        display: inline-block;
         margin: 0px;
         font-weight: normal;
+        text-align: middle;
+    }
+    &__list {
+        display: inline-block;
+        list-style: none;
+        text-align: middle;
+    }
+    &__item {
+        display: inline-block;
+        padding: 0px 5px;
+        text-align: middle;
+    }
+    &__currency {
+        text-transform: uppercase;
     }
 }

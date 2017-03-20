@@ -1,4 +1,18 @@
 <div class="balance">
     <div class="balance__header">Balance</div>
-    <pre [innerHtml]="data"></pre>
+    <ul class="balance__list" *ngIf="data">
+        <li 
+            class="balance__item"
+            *ngFor="let currency of data.funds">
+            <span 
+              class="balance__currency"
+              [innerHtml]="currency.name">
+            </span>
+            :
+            <span 
+              class="balance__amount"
+              [innerHtml]="currency.amount">
+            </span>
+        </li>
+    </ul>
 </div>

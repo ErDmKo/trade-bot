@@ -13,7 +13,7 @@ import { AppState } from '../app.service';
   templateUrl: './template.html'
 })
 export class BalanceComponent {
-    private data: string;
+    private data: Object;
     errorMessage: string;
 
     constructor(
@@ -25,7 +25,7 @@ export class BalanceComponent {
         this.balanceService
             .getWsData()
             .subscribe(
-                data => this.data = JSON.stringify(data, null, 2),
+                data => this.data = data,
                 error => this.errorMessage = <any>error
             );
     }
