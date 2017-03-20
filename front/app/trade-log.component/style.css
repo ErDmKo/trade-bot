@@ -1,0 +1,5 @@
+.trade-log {
+    &__list {
+        list-style: none;
+    }
+}

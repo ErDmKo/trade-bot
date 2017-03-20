@@ -16,6 +16,7 @@ def setup_routes(app):
     app.router.add_get('/api/ws_pairs', views.ws_pairs, name='ws_pairs')
     app.router.add_get('/api/ws_balance', views.ws_balance, name='ws_balance')
     app.router.add_get('/api/ws_order_book', views.ws_order_book, name='ws_order_book')
+    app.router.add_get('/api/ws_trade_log', views.ws_trade_log, name='ws_trade_log')
     app.router.add_static(
         '/static/',
         path=str(PROJECT_ROOT / 'static'),

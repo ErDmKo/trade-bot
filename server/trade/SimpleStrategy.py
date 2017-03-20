@@ -10,13 +10,16 @@ class SimpleStrategy(object):
     PAIR = 'btc_usd'
     FEE = 0.1
 
-    @classmethod
-    def init_self(cls):
-        return SimpleStrategy()
+    def __init__(self, log):
+        self.log = log
 
     @classmethod
-    async def create(cls, connection, tradeApi, pubApi, is_demo=False):
-        self = cls.init_self()
+    def init_self(cls, log):
+        return SimpleStrategy(log)
+
+    @classmethod
+    async def create(cls, connection, tradeApi, pubApi, is_demo=False, log=False):
+        self = cls.init_self(log)
         self.is_demo = is_demo
         self.api = tradeApi
         self.pubApi = pubApi
@@ -39,6 +42,10 @@ class SimpleStrategy(object):
 
     def print(self, string):
         print(string)
+        if self.log:
+            self.log.broadcast({
+                'message': string
+            })
 
     def get_order_table(self):
         return getattr(db, self.order_table)
@@ -174,9 +181,10 @@ class SimpleStrategy(object):
     def get_stat(self):
         return self.order
 
-    async def tick(self, resp):
+    async def tick(self, resp, balance=False):
         self.depth = resp
-        await self.get_balance()
+        if not balance:
+            await self.get_balance()
         order = await self.get_order()
         if not order:
             self.print('init order is {}'.format(order))

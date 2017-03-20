@@ -22,6 +22,7 @@ async def update_info(app):
             print_exception()
             continue
 
+        channels = app['socket_channels']
         print('tik - {}'.format(datetime.datetime.now().isoformat()))
 
         if app.get('strategy'):
@@ -29,12 +30,11 @@ async def update_info(app):
             for pair, info in depth_info.items():
                 if strategy.PAIR == pair:
                     try:
-                        await app['strategy'].tick(info)
+                        await app['strategy'].tick(info, balans_info)
                     except Exception as e:
                         print('Error')
                         print_exception()
 
-        channels = app['socket_channels']
 
         channels['balance_socket'].broadcast(balans_info)
         channels['depth_socket'].broadcast(depth_info)

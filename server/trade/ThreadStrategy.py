@@ -71,9 +71,10 @@ class ThreadStrategy(SimpleStrategy):
 
     FLAG_NAME = 'is_finished'
 
+
     @classmethod
-    def init_self(cls):
-        return ThreadStrategy()
+    def init_self(cls, log):
+        return ThreadStrategy(log)
 
     def get_market_threshhold(self, depth):
         return 1 - (depth['bids'][0][0] / depth['asks'][0][0])
@@ -150,10 +151,11 @@ class ThreadStrategy(SimpleStrategy):
                     ))
                     return
 
-    async def tick(self, resp):
+    async def tick(self, resp, balance=False):
         self.depth = resp
         await self.get_order()
-        await self.get_balance()
+        if not balance:
+            await self.get_balance()
         sell_margins = []
         buy_margins = []
 

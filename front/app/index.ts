@@ -3,6 +3,7 @@ import { AppComponent } from './app.component';
 import { PairComponent } from './pair.component';
 import { BalanceComponent } from './balance.component';
 import { OrderBookComponent } from './order-book.component';
+import { TradeLogComponent } from './trade-log.component';
 import { OrderComponent } from './order.component';
 import { AppState, InternalStateType } from './app.service';
 import { removeNgStyles, createNewHosts, createInputTransfer } from '@angularclass/hmr';
@@ -30,7 +31,8 @@ const APP_PROVIDERS = [
         OrderBookComponent,
         PairComponent,
         OrderComponent,
-        BalanceComponent
+        BalanceComponent,
+        TradeLogComponent
     ],
     imports: [
         BrowserModule,

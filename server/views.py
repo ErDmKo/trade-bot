@@ -65,3 +65,10 @@ async def ws_order_book(request):
     channel = request.app['socket_channels']['depth_socket']
     channel.append(ws)
     return await handle_socket(ws, request.app['pubapi'], 'depth') 
+
+async def ws_trade_log(request):
+    ws = web.WebSocketResponse()
+    await ws.prepare(request)
+    channel = request.app['socket_channels']['log']
+    channel.append(ws)
+    return await handle_socket(ws) 

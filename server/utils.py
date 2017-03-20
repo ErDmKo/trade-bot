@@ -19,13 +19,14 @@ class BList(list):
                     print('client ERROR')
                     raise e
 
-async def handle_socket(ws, api, method):
+async def handle_socket(ws, api=False, method=False):
 
     async for msg in ws:
         if msg.type == aiohttp.WSMsgType.TEXT:
             if msg.data == 'connect':
-                info = await api.call(method)
-                ws.send_json(info, dumps = dumps)
+                if api:
+                    info = await api.call(method)
+                    ws.send_json(info, dumps = dumps)
             elif msg.data == 'close':
                 await ws.close()
             else:
