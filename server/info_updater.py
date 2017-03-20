@@ -24,7 +24,6 @@ async def update_info(app):
 
         print('tik - {}'.format(datetime.datetime.now().isoformat()))
 
-        '''
         if app.get('strategy'):
             strategy = app.get('strategy')
             for pair, info in depth_info.items():
@@ -34,8 +33,6 @@ async def update_info(app):
                     except Exception as e:
                         print('Error')
                         print_exception()
-        '''
-
 
         channels = app['socket_channels']
 
