@@ -156,6 +156,8 @@ class ThreadStrategy(SimpleStrategy):
         await self.get_order()
         if not balance:
             await self.get_balance()
+        else:
+            self.balance = balance['funds']
         sell_margins = []
         buy_margins = []
 
@@ -183,7 +185,8 @@ class ThreadStrategy(SimpleStrategy):
                     margin = D(1 - (old_money / best_price)).quantize(self.prec)
                     if not self.is_demo and abs(margin) < self.get_threshhold(resp):
                         self.print(
-                            'Try to buy - previous sell {} now {} with fee {} marign {}'.format(
+                            'Try to buy - previous {} sell {} now {} with fee {} marign {}'.format(
+                                order.get('id'),
                                 old_money,
                                 resp['asks'][0][0],
                                 best_price,
@@ -203,7 +206,8 @@ class ThreadStrategy(SimpleStrategy):
                     margin = D((old_money / best_price) - 1).quantize(self.prec)
                     if not self.is_demo and abs(margin) < self.get_threshhold(resp):
                         self.print(
-                            'Try to sell - previous buy {} now {} need {} marign {}'.format(
+                            'Try to sell - previous {} buy {} now {} need {} marign {}'.format(
+                                order.get('id'),
                                 old_money,
                                 resp['bids'][0][0],
                                 best_price,

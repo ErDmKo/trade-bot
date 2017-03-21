@@ -13,10 +13,11 @@ class BList(list):
                 waiter.send_json(message, dumps=dumps)
             except RuntimeError as e:
                 if str(e) == 'websocket connection is closing':
-                    print('close client')
+                    print('close by client')
                     self.remove(waiter)
                 else:
-                    print('client ERROR')
+                    print('close by socker error')
+                    self.remove(waiter)
                     raise e
 
 async def handle_socket(ws, api=False, method=False):
