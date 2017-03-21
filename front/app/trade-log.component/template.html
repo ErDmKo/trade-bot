@@ -1,7 +1,7 @@
 <div class="trade-log">
     <h3 class="trade-log__header">Log</h3>
     <ul class="trade-log__list" *ngIf="data">
-        <li *ngFor="let item of data" class="trade-log__item">
+        <li [@flyInOut]="'in'" *ngFor="let item of data" class="trade-log__item">
             <span [innerHtml]="item.message"></span>
         </li>
     </ul>
