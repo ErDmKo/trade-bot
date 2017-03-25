@@ -55,35 +55,68 @@ class OrderThread(object):
                             sa.cast(func.coalesce(order_table.c.extra, '{}'), JSONB)
                             .concat(func.jsonb_build_object(
                                 self.FLAG_NAME, '1',
-                                'next', nextOrder.id if nextOrder else 'null'
+                                'next', nextOrder['id'] if nextOrder else 'null'
                             )), JSONB
                         )
                     )
         )
+
+class TrashHolder(object):
+
+    THRESHOLD = 0.01
+
+    def __init__(self, market):
+        self.market = market
+        self.sell_info = []
+        self.buy_info = []
+
+    def get_market_threshhold(self):
+        return 1 - (float(self.market['bids'][0][0]) / float(self.market.depth['asks'][0][0]))
+
+    def add_order(self, order_info):
+        if order_info['order'].get('is_sell'):
+            self.sell_info.append(order_info)
+        else:
+            self.buy_info.append(order_info)
+
+    def get_value(self):
+        return max(
+            self.THRESHOLD,
+            self.get_market_threshhold() 
+        )
+
+    def get_min(self, direction):
+        if not len(self.sell_info) and direction == 'sell' \
+            or not len(self.buy_info) and direction == 'buy':
+            return {
+                'margin': 0
+            }
+        return min(
+            getattr(self, 'sell_info' if direction == 'sell' else 'buy_info'),
+            key=lambda i: i['margin']
+        )
+
+    def need_to_sell(self):
+        order_info = self.get_min('sell')
+        return order_info['margin'] > self.THRESHOLD
+
+    def need_to_buy(self):
+        order_info = self.get_min('buy')
+        return order_info['margin'] > self.THRESHOLD
 
 class ThreadStrategy(SimpleStrategy):
 
     LIMIT = 10000
     PAIR = 'btc_usd'
     FEE = 0.1
-
-    THRESHOLD = 0.01
-
     FLAG_NAME = 'is_finished'
 
-
     @classmethod
-    def init_self(cls, log):
-        return ThreadStrategy(log)
-
-    def get_market_threshhold(self, depth):
-        return 1 - (depth['bids'][0][0] / depth['asks'][0][0])
+    def init_self(cls):
+        return ThreadStrategy()
 
     def get_threshhold(self, depth):
-        return max(
-            self.THRESHOLD,
-            self.get_market_threshhold(depth) 
-        )
+        return TrashHolder(depth)    
 
     async def get_order(self):
         self.order = None
@@ -144,22 +177,22 @@ class ThreadStrategy(SimpleStrategy):
                     order = await getattr(self, direction)(resp)
 
                 if order:
-                    self.print('New thread was started currency {} amount {} direction {}'.format(
+                    self.print('New thread currency {} price {} amount {} direction {}'.format(
                         currency,
-                        amount,
+                        order['price'],
+                        order['amount'],
                         direction
                     ))
                     return
 
     async def tick(self, resp, balance=False):
+        thresh_hold = self.get_threshhold(resp)
         self.depth = resp
         await self.get_order()
         if not balance:
             await self.get_balance()
         else:
             self.balance = balance['funds']
-        sell_margins = []
-        buy_margins = []
 
         if not len(self.orders):
             self.print('init')
@@ -176,14 +209,20 @@ class ThreadStrategy(SimpleStrategy):
                     order.get('price'),
                     True
                 )
+                buy_money = self.get_best_price(
+                    order.get('amount'),
+                    resp['asks'][0][0],
+                    False
+                )
+                sell_money = self.get_best_price(
+                    order.get('amount'),
+                    resp['bids'][0][0],
+                    True
+                )
                 if order.get('is_sell'):
-                    best_price = self.get_best_price(
-                        order.get('amount'),
-                        resp['asks'][0][0],
-                        False
-                    )
-                    margin = D(1 - (old_money / best_price)).quantize(self.prec)
-                    if not self.is_demo and abs(margin) < self.get_threshhold(resp):
+                    # check previous sell and current market sell
+                    margin = D(1 - (old_money / sell_money)).quantize(self.prec)
+                    if not self.is_demo and abs(margin) < thresh_hold.THRESHOLD:
                         self.print(
                             'Try to buy - previous {} sell {} now {} with fee {} marign {}'.format(
                                 order.get('id'),
@@ -193,18 +232,17 @@ class ThreadStrategy(SimpleStrategy):
                                 margin
                             )
                         )
-                    sell_margins.append(margin)
+                    thresh_hold.add_order({
+                        'margin': margin,
+                        'order': order
+                    })
 
-                    if old_money > best_price:
+                    if old_money > buy_money:
                         await self.buy(resp, order)
                 else:
-                    best_price = self.get_best_price(
-                        order.get('amount'),
-                        resp['bids'][0][0],
-                        True
-                    )
-                    margin = D((old_money / best_price) - 1).quantize(self.prec)
-                    if not self.is_demo and abs(margin) < self.get_threshhold(resp):
+                    #previous buy and current market buy
+                    margin = D((old_money / buy_money) - 1).quantize(self.prec)
+                    if not self.is_demo and abs(margin) < self.get_threshhold_value():
                         self.print(
                             'Try to sell - previous {} buy {} now {} need {} marign {}'.format(
                                 order.get('id'),
@@ -214,31 +252,33 @@ class ThreadStrategy(SimpleStrategy):
                                 margin
                             )
                         )
-                    buy_margins.append(margin)
-                    if old_money < best_price:
+                    thresh_hold.add_order({
+                        'margin': margin,
+                        'order': order
+                    })
+                    if old_money < sell_money:
                         await self.sell(resp, order)
                 old_order = order
 
-            thresh_hold = self.get_threshhold(resp)
-            self.print('Threshhold {} market {} {} / {}'.format(
-                thresh_hold,
-                self.get_market_threshhold(resp),
-                resp['bids'][0][0], 
-                resp['asks'][0][0]
-            ))
-            if len(sell_margins) and min(sell_margins) > thresh_hold:
-                self.print('Sell margin {} biger then {}'.format(
-                    min(sell_margins),
-                    thresh_hold
+            if not self.is_demo:
+                self.print('Threshhold margins Sell {} Buy {}'.format(
+                    thresh_hold.get_min('sell')['margin'],
+                    thresh_hold.get_min('buy')['margin']
+                ))
+
+            if  thresh_hold.need_to_sell():
+                order_info = thresh_hold.get_min('sell')
+                self.print('Sell last order price {} margin {} biger then {}'.format(
+                    order_info['order'].get('price'),
+                    order_info['margin'],
+                    thresh_hold.THRESHOLD
                 ))
                 await self.start_new_thread(resp, 'sell')
-            if len(buy_margins) and min(buy_margins) > thresh_hold:
-                self.print('Buy margin {} biger then {}'.format(
-                    min(buy_margins),
-                    thresh_hold
+            if thresh_hold.need_to_buy():
+                order_info =thresh_hold.get_min('buy')
+                self.print('Buy price {} margin {} biger then {}'.format(
+                    order_info['order'].get('price'),
+                    thresh_hold.get_min('buy')['margin'],
+                    thresh_hold.THRESHOLD
                 ))
                 await self.start_new_thread(resp, 'buy')
-
-            sell_margins = []
-            buy_margins = []
-

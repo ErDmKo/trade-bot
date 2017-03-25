@@ -10,17 +10,15 @@ class SimpleStrategy(object):
     PAIR = 'btc_usd'
     FEE = 0.1
 
-    def __init__(self, log):
-        self.log = log
-
     @classmethod
-    def init_self(cls, log):
-        return SimpleStrategy(log)
+    def init_self(cls):
+        return SimpleStrategy()
 
     @classmethod
     async def create(cls, connection, tradeApi, pubApi, is_demo=False, log=False):
-        self = cls.init_self(log)
+        self = cls.init_self()
         self.is_demo = is_demo
+        self.log = log
         self.api = tradeApi
         self.pubApi = pubApi
         self.connection = connection
@@ -110,6 +108,12 @@ class SimpleStrategy(object):
             rate=price,
             amount = amount
         )
+        currency = self.currency[direction]
+        self.print('{} spended {} {} '.format(
+            direction,
+            self.balance[currency] - api_resp['funds'][currency],
+            currency
+        ))
         self.balance = api_resp['funds']
         return api_resp
 
@@ -145,8 +149,8 @@ class SimpleStrategy(object):
         order = await self.add_order(info)
 
         self.print_order(info, 'sell', old_order)
-
-        return order
+        info['id'] = order.id
+        return info
 
 
     async def buy(self, depth, old_order=False):
@@ -167,8 +171,8 @@ class SimpleStrategy(object):
         order = await self.add_order(info)
 
         self.print_order(info, 'buy', old_order)
-
-        return order
+        info['id'] = order.id
+        return info
 
     def get_best_price(self, amount, price, diretion):
         fee = (float(self.pair_info['fee']) + self.FEE) / 100

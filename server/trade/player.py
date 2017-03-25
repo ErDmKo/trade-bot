@@ -50,13 +50,19 @@ async def main_test(loop):
         cursor = await conn.execute(
                 db.history
                     .select()
-                    .where(db.history.c.pair == player.PAIR)
+                    .where(
+                        (db.history.c.pair == player.PAIR)
+                        & db.history.c.pub_date.between('2017-03-22 14:36:00', '2017-03-25 14:39:00')
+                    )
                     .order_by(db.history.c.pub_date)
                     .offset(player.OFFSET)
                     .limit(player.LIMIT)
                 )
         async for tick in cursor:
-            await player.tick(json.loads(tick.resp))
+            await player.tick(json.loads(tick.resp), {'funds': {
+                'usd': 1000,
+                'btc': 1
+            }})
 
 def run_script():
    loop = asyncio.get_event_loop()
