@@ -109,6 +109,7 @@ class SimpleStrategy(object):
             amount = amount
         )
         currency = self.currency[direction]
+        api_resp['old_balance'] = self.balance.copy()
         self.print('{} spended {} {} '.format(
             direction,
             self.balance[currency] - api_resp['funds'][currency],

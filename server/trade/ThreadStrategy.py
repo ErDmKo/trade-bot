@@ -79,12 +79,6 @@ class TrashHolder(object):
         else:
             self.buy_info.append(order_info)
 
-    def get_value(self):
-        return max(
-            self.THRESHOLD,
-            self.get_market_threshhold() 
-        )
-
     def get_min(self, direction):
         if not len(self.sell_info) and direction == 'sell' \
             or not len(self.buy_info) and direction == 'buy':
@@ -228,7 +222,7 @@ class ThreadStrategy(SimpleStrategy):
                                 order.get('id'),
                                 old_money,
                                 resp['asks'][0][0],
-                                best_price,
+                                buy_money,
                                 margin
                             )
                         )
@@ -242,13 +236,13 @@ class ThreadStrategy(SimpleStrategy):
                 else:
                     #previous buy and current market buy
                     margin = D((old_money / buy_money) - 1).quantize(self.prec)
-                    if not self.is_demo and abs(margin) < self.get_threshhold_value():
+                    if not self.is_demo and abs(margin) < thresh_hold.THRESHOLD:
                         self.print(
                             'Try to sell - previous {} buy {} now {} need {} marign {}'.format(
                                 order.get('id'),
                                 old_money,
                                 resp['bids'][0][0],
-                                best_price,
+                                sell_money,
                                 margin
                             )
                         )
