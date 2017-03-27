@@ -1,4 +1,5 @@
 import json
+import os
 import yaml
 import pathlib
 import aiohttp
@@ -40,8 +41,7 @@ async def handle_socket(ws, api=False, method=False):
 def load_config(fname=str(pathlib.Path('.') / 'config' / 'base.yaml')):
     with open(fname, 'rt') as f:
         data = yaml.load(f)
-
-    with open(str(pathlib.Path('.') / 'config' / 'local.yaml'), 'rt') as f:
+    with open(os.path.abspath(os.path.join(fname, '..', 'local.yaml'))) as f:
         data.update(yaml.load(f))
     return data
 
