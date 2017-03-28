@@ -2,6 +2,7 @@
 *.pyc
 uwsgi.ini
 npm-debug.log
+.ipynb_checkpoints
 static/
 local.yaml
 .DS_Store
