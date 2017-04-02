@@ -49,7 +49,7 @@ async def update_info(app):
                             resp = dumps(info)
                         )
                     )
-        await asyncio.sleep(2)
+        await asyncio.sleep(1)
     
 async def on_shutdown(app):
     app['updater_future'].cancel()
