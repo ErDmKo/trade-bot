@@ -108,6 +108,16 @@ class SimpleStrategy(object):
             rate=price,
             amount = amount
         )
+        if float(api_resp['received']) < amount:
+            self.print('CancelOrder {}'.format(
+                api_resp['order_id']
+            ))
+            await self.api.call(
+                'CancelOrder',
+                order_id=api_resp['order_id']
+            )
+            self.balance = api_resp['funds']
+            return False
         currency = self.currency[direction]
         api_resp['old_balance'] = self.balance.copy()
         self.print('{} spended {} {} '.format(
@@ -146,6 +156,8 @@ class SimpleStrategy(object):
             return
         info = self.get_order_info(price, amount, True)
         api_resp = await self.trade('sell', price, amount)
+        if not api_resp:
+            return False
         info['api'] = utils.dumps(api_resp)
         order = await self.add_order(info)
 
@@ -168,6 +180,8 @@ class SimpleStrategy(object):
             )
             return
         api_resp = await self.trade('buy', price, amount);
+        if not api_resp:
+            return False
         info['api'] = utils.dumps(api_resp)
         order = await self.add_order(info)
 
