@@ -1,12 +1,13 @@
 import asyncio
 import json
+from decimal import Decimal as D
 from server import db
 from server import utils 
 from ..btcelib import TradeAPIv1, PublicAPIv3
 from .SimpleStrategy import SimpleStrategy
 from .ThreadStrategy import ThreadStrategy
 
-async def load_strategy(app):
+async def load_strategy(app, strategy_name):
     while True:
         engine = app.get('db')
         if not engine:
@@ -16,7 +17,11 @@ async def load_strategy(app):
         async with engine.acquire() as conn:
             tradeApi = app['privapi']
             pubApi = PublicAPIv3('btc_usd')
-            app['strategy'] = await ThreadStrategy.create(
+            module = __import__('server.trade.{}'.format(
+                strategy_name
+            ), fromlist=[strategy_name])
+            print(strategy_name)
+            app['strategy'] = await getattr(module, strategy_name).create(
                 conn,
                 tradeApi,
                 pubApi,
@@ -28,9 +33,9 @@ async def load_strategy(app):
 async def on_shutdown(app):
     app['strategy_maker'].cancel()
 
-def add_simple(app):
+def add_strategy(app, strategy_name='ThreadStrategy'):
     app['strategy_maker'] = asyncio.ensure_future(
-        load_strategy(app),
+        load_strategy(app, strategy_name),
         loop=app.loop
     )
     app.on_shutdown.append(on_shutdown)
@@ -47,6 +52,7 @@ async def main_test(loop):
         player = await ThreadStrategy.create(conn, tradeApi, pubApi, True)
         # player = await SimpleStrategy.create(conn, tradeApi, pubApi, True)
         clear_order = await conn.execute(db.demo_order.delete())
+        print('player')
         cursor = await conn.execute(
                 db.history
                     .select()
@@ -60,8 +66,8 @@ async def main_test(loop):
                 )
         async for tick in cursor:
             await player.tick(json.loads(tick.resp), {'funds': {
-                'usd': 1000,
-                'btc': 1
+                'usd': D(1000),
+                'btc': D(1)
             }})
 
 def run_script():

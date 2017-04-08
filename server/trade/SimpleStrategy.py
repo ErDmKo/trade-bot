@@ -1,3 +1,4 @@
+import json
 import sqlalchemy as sa
 from decimal import Decimal as D
 from server import db
@@ -12,7 +13,7 @@ class SimpleStrategy(object):
 
     @classmethod
     def init_self(cls):
-        return SimpleStrategy()
+        return cls()
 
     @classmethod
     async def create(cls, connection, tradeApi, pubApi, is_demo=False, log=False):
@@ -55,6 +56,9 @@ class SimpleStrategy(object):
          return self.pair_info
 
     async def add_order(self, info):
+        if not info['api']:
+            raise Exception('WTF dude?!?!')
+
         result = await self.connection.execute(
             self.get_order_table().insert().values(**info)
         )
@@ -112,12 +116,15 @@ class SimpleStrategy(object):
             self.print('CancelOrder {}'.format(
                 api_resp['order_id']
             ))
-            await self.api.call(
-                'CancelOrder',
-                order_id=api_resp['order_id']
-            )
-            self.balance = api_resp['funds']
-            return False
+            try:
+                result = await self.api.call(
+                    'CancelOrder',
+                    order_id=api_resp['order_id']
+                )
+                self.balance = result['funds']
+                return False
+            except Exception as e:
+                self.print('Fail to cancel order! {}'.format(e))
         currency = self.currency[direction]
         api_resp['old_balance'] = self.balance.copy()
         self.print('{} spended {} {} '.format(
@@ -158,7 +165,7 @@ class SimpleStrategy(object):
         api_resp = await self.trade('sell', price, amount)
         if not api_resp:
             return False
-        info['api'] = utils.dumps(api_resp)
+        info['api'] = json.loads(utils.dumps(api_resp))
         order = await self.add_order(info)
 
         self.print_order(info, 'sell', old_order)
@@ -173,16 +180,16 @@ class SimpleStrategy(object):
         info = self.get_order_info(price, amount, False)
         if self.balance[currency] < float(price) * amount:
             self.print('Low balance {} {} need more {} '.format(
-                self.balance[currency],
-                currency,
-                (float(price) * amount) - float(self.balance[currency])
+                    self.balance[currency],
+                    currency,
+                    (float(price) * amount) - float(self.balance[currency])
                 )
             )
             return
         api_resp = await self.trade('buy', price, amount);
         if not api_resp:
             return False
-        info['api'] = utils.dumps(api_resp)
+        info['api'] = json.loads(utils.dumps(api_resp))
         order = await self.add_order(info)
 
         self.print_order(info, 'buy', old_order)

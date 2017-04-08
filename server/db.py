@@ -5,7 +5,7 @@ import aiopg.sa
 import asyncio
 import pathlib
 import sys
-from .utils import load_config
+from .utils import load_config, DecimalEncoder
 
 meta = sa.MetaData()
 

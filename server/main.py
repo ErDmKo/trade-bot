@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import pathlib
+import sys
 
 import jinja2
 
@@ -12,7 +13,7 @@ from collections import defaultdict
 from .info_updater import setup_info_updater
 from .middlewares import setup_middlewares
 from .db import close_pg, init_pg
-from .trade.player import add_simple
+from .trade.player import add_strategy
 
 from server import btcelib 
 
@@ -46,7 +47,8 @@ def init():
     setup_routes(app)
     setup_middlewares(app)
     setup_info_updater(app)
-    add_simple(app)
+    prog = sys.argv[1] if len(sys.argv) > 1 else ''
+    add_strategy(app, 'TestStrategy' if prog == 'test' else 'ThreadStrategy')
 
     return app
 

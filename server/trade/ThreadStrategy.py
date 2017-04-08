@@ -105,10 +105,6 @@ class ThreadStrategy(SimpleStrategy):
     FEE = 0.1
     FLAG_NAME = 'is_finished'
 
-    @classmethod
-    def init_self(cls):
-        return ThreadStrategy()
-
     def get_threshhold(self, depth):
         return TrashHolder(depth)    
 
@@ -120,6 +116,7 @@ class ThreadStrategy(SimpleStrategy):
             order_table.select()
                 .where(
                     (order_table.c.pair == self.PAIR) & 
+                    (order_table.c.api != 'false') & 
                     (order_table.c.extra[self.FLAG_NAME].astext == '0')
                 )
         )
