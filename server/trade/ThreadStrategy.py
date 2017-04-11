@@ -235,7 +235,7 @@ class ThreadStrategy(SimpleStrategy):
                     margin = D((old_money / buy_money) - 1).quantize(self.prec)
                     if not self.is_demo and abs(margin) < thresh_hold.THRESHOLD:
                         self.print(
-                            'Try to sell - previous {} buy {} now {} need {} marign {}'.format(
+                            'Try to sell - previous {} buy {} now {} with fee {} marign {}'.format(
                                 order.get('id'),
                                 old_money,
                                 resp['bids'][0][0],
