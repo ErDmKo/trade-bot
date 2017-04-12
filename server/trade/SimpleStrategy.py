@@ -9,7 +9,7 @@ class SimpleStrategy(object):
     OFFSET = 0
     LIMIT = 10000
     PAIR = 'btc_usd'
-    FEE = 0.1
+    FEE = 0.3
 
     @classmethod
     def init_self(cls):
@@ -83,7 +83,7 @@ class SimpleStrategy(object):
         self.balance = balnce_info['funds']
         return self.balance[currency]
 
-    def get_new_amount(self, currency):
+    def get_new_amount(self, currency, amount, volume):
         return float(max([
             self.pair_info['min_amount'],
             D(self.balance[self.currency['sell']]/1000).quantize(self.prec)
@@ -99,7 +99,7 @@ class SimpleStrategy(object):
             extra = {}
         )
 
-    async def trade(self, direction, price, amount):
+    async def trade(self, direction, info):
         if self.is_demo:
             return {
                 "demo_order": "1",
@@ -107,12 +107,12 @@ class SimpleStrategy(object):
             }
         api_resp = await self.api.call(
             'Trade',
-            pair=self.PAIR,
+            pair=info['pair'],
             type=direction,
-            rate=price,
-            amount = amount
+            rate=info['price'],
+            amount = info['amount']
         )
-        if float(api_resp['received']) < amount:
+        if float(api_resp['received']) < info['amount']:
             self.print('CancelOrder {}'.format(
                 api_resp['order_id']
             ))
@@ -127,11 +127,6 @@ class SimpleStrategy(object):
                 self.print('Fail to cancel order! {}'.format(e))
         currency = self.currency[direction]
         api_resp['old_balance'] = self.balance.copy()
-        self.print('{} spended {} {} '.format(
-            direction,
-            self.balance[currency] - api_resp['funds'][currency],
-            currency
-        ))
         self.balance = api_resp['funds']
         return api_resp
 
@@ -149,20 +144,28 @@ class SimpleStrategy(object):
                 info['price'])
             )
 
-    async def sell(self, depth, old_order=False):
-        currency = self.currency['sell']
-        amount = self.get_new_amount(currency)
-        price = depth['bids'][0][0]
-        if self.balance[currency] < amount:
+    def get_trade_info(self, depth, direction, amount=False):
+        is_sell = direction == 'sell'
+        currency = self.currency[direction]
+        price, volume = depth['bids' if is_sell else 'asks'][0]
+        info_amount = self.get_new_amount(currency, amount, volume)
+        money = info_amount if is_sell else float(price) * info_amount
+        if self.balance[currency] < money:
             self.print('Low balance {} {} need more {} '.format(
                 self.balance[currency],
                 currency,
-                amount
+                (money - float(self.balance[currency]))
                 )
             )
-            return
-        info = self.get_order_info(price, amount, True)
-        api_resp = await self.trade('sell', price, amount)
+            return 
+        info = self.get_order_info(price, info_amount, is_sell)
+        return info
+        
+    async def sell(self, depth, old_order=False, amount=False):
+        info = self.get_trade_info(depth, 'sell', amount)
+        if not info:
+            return False
+        api_resp = await self.trade('sell', info)
         if not api_resp:
             return False
         info['api'] = json.loads(utils.dumps(api_resp))
@@ -173,20 +176,11 @@ class SimpleStrategy(object):
         return info
 
 
-    async def buy(self, depth, old_order=False):
-        currency = self.currency['buy']
-        amount = self.get_new_amount(currency)
-        price = depth['asks'][0][0]
-        info = self.get_order_info(price, amount, False)
-        if self.balance[currency] < float(price) * amount:
-            self.print('Low balance {} {} need more {} '.format(
-                    self.balance[currency],
-                    currency,
-                    (float(price) * amount) - float(self.balance[currency])
-                )
-            )
-            return
-        api_resp = await self.trade('buy', price, amount);
+    async def buy(self, depth, old_order=False, amount=False):
+        info = self.get_trade_info(depth, 'buy', amount)
+        if not info:
+            return False
+        api_resp = await self.trade('buy', info)
         if not api_resp:
             return False
         info['api'] = json.loads(utils.dumps(api_resp))

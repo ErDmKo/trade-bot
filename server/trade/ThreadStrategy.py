@@ -24,41 +24,37 @@ class OrderThread(object):
     def get_order(self):
         return self.order
 
-    async def merge(self, order):
-        order_table = self.table
+    async def update_by_id(self, id, **kw):
         return await self.connection.execute(
-                order_table
+                self.table
                     .update()
-                    .where(order_table.c.id == self.order.id)
-                    .values(
-                        extra = sa.cast(
-                            sa.cast(func.coalesce(order_table.c.extra, '{}'), JSONB)
-                            .concat(func.jsonb_build_object(
-                                self.FLAG_NAME, '1',
-                                'merged', order.get('id')
-                            )), JSONB
-                        )
-                    ) 
+                    .where(self.table.c.id == id)
+                    .values(**kw)
+        )
+
+    async def merge(self, order):
+        return await self.update_by_id(self.order.id,
+            extra = sa.cast(
+                sa.cast(func.coalesce(self.table.c.extra, '{}'), JSONB)
+                .concat(func.jsonb_build_object(
+                    self.FLAG_NAME, '1',
+                    'merged', order.get('id')
+                )), JSONB
+            )
         )
 
     async def nextStep(self, nextOrder=False):
         if not nextOrder:
             raise Exception('WTF dude?!?!')
 
-        order_table = self.table
-        return await self.connection.execute(
-                order_table
-                    .update()
-                    .where(order_table.c.id == self.order.id)
-                    .values(
-                        extra = sa.cast(
-                            sa.cast(func.coalesce(order_table.c.extra, '{}'), JSONB)
-                            .concat(func.jsonb_build_object(
-                                self.FLAG_NAME, '1',
-                                'next', nextOrder['id'] if nextOrder else 'null'
-                            )), JSONB
-                        )
-                    )
+        return await self.update_by_id(self.order.id,
+            extra = sa.cast(
+                sa.cast(func.coalesce(self.table.c.extra, '{}'), JSONB)
+                .concat(func.jsonb_build_object(
+                    self.FLAG_NAME, '1',
+                    'next', nextOrder['id'] if nextOrder else 'null'
+                )), JSONB
+            )
         )
 
 class TrashHolder(object):
@@ -103,7 +99,7 @@ class ThreadStrategy(SimpleStrategy):
     LIMIT = 10000
     PAIR = 'btc_usd'
     FEE = 0.1
-    FLAG_NAME = 'is_finished'
+    ORDER_CLASS = OrderThread
 
     def get_threshhold(self, depth):
         return TrashHolder(depth)    
@@ -117,11 +113,11 @@ class ThreadStrategy(SimpleStrategy):
                 .where(
                     (order_table.c.pair == self.PAIR) & 
                     (order_table.c.api != 'false') & 
-                    (order_table.c.extra[self.FLAG_NAME].astext == '0')
+                    (order_table.c.extra[self.ORDER_CLASS.FLAG_NAME].astext == '0')
                 )
         )
         async for order in cursor:
-            order_obj = OrderThread(order, self.connection, order_table)
+            order_obj = self.ORDER_CLASS(order, self.connection, order_table)
             self.orders.append(order_obj)
 
         return self.orders
@@ -133,18 +129,18 @@ class ThreadStrategy(SimpleStrategy):
             amount = amount,
             is_sell = is_sell,
             extra = {
-                self.FLAG_NAME: "0"
+                self.ORDER_CLASS.FLAG_NAME: "0"
             }
         )
 
 
-    async def buy(self, depth, old_order=False):
-        new_order = await super().buy(depth, old_order)
+    async def buy(self, depth, old_order=False, amount=False):
+        new_order = await super().buy(depth, old_order, amount)
         if old_order and new_order:
             result = await old_order.nextStep(new_order)
         return new_order
 
-    async def sell(self, depth, old_order=False):
+    async def sell(self, depth, old_order=False, amount=False):
         new_order = await super().sell(depth, old_order)
         if old_order and new_order:
             result = await old_order.nextStep(new_order)

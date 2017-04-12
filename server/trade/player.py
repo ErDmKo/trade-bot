@@ -1,5 +1,6 @@
 import asyncio
 import json
+import sys
 from decimal import Decimal as D
 from server import db
 from server import utils 
@@ -49,8 +50,17 @@ async def main_test(loop):
             'Secret': conf['api']['API_SECRET']
             })
         pubApi = PublicAPIv3('btc_usd')
-        player = await ThreadStrategy.create(conn, tradeApi, pubApi, True)
-        # player = await SimpleStrategy.create(conn, tradeApi, pubApi, True)
+
+        if len(sys.argv) > 2:
+            strategy_name = sys.argv[2]
+            module = __import__('server.trade.{}'.format(
+                strategy_name
+            ), fromlist=[strategy_name])
+            strategy = getattr(module, strategy_name)
+        else:
+            strategy = ThreadStrategy
+
+        player = await strategy.create(conn, tradeApi, pubApi, True)
         clear_order = await conn.execute(db.demo_order.delete())
         print('player')
         cursor = await conn.execute(
