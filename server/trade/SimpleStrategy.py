@@ -9,7 +9,7 @@ class SimpleStrategy(object):
     OFFSET = 0
     LIMIT = 10000
     PAIR = 'btc_usd'
-    FEE = 0.3
+    FEE = 0.1
 
     @classmethod
     def init_self(cls):
@@ -190,13 +190,26 @@ class SimpleStrategy(object):
         info['id'] = order.id
         return info
 
-    def get_best_price(self, amount, price, diretion):
-        fee = (float(self.pair_info['fee']) + self.FEE) / 100
-        all_money = amount * float(price)
-        dellta = -1 if diretion else 1
-        out = all_money * (1 + dellta * fee)
-        # self.print('{} * {} * (1 {} * {}) '.format(amount, price, dellta, fee))
-        return out
+    @classmethod
+    def get_fee(cls, fee, delta):
+        return 1 + (delta*(fee)/100)
+
+    @classmethod
+    def calc_money(cls, fee, amount, price, is_sell):
+        if is_sell:
+            sell_delta = -1
+            buy_delta = 1
+        else:
+            sell_delta = 1
+            buy_delta = -1
+        return {
+            'sell': sell_delta * amount,
+            'buy': buy_delta * amount * price * cls.get_fee(fee, sell_delta)
+        }
+
+    def get_best_price(self, amount, price, is_sell, fee):
+        money_change = self.calc_money(float(self.pair_info['fee']) + fee, amount, price, is_sell)
+        return money_change['buy']
 
     def get_stat(self):
         return self.order

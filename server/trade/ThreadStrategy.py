@@ -59,7 +59,7 @@ class OrderThread(object):
 
 class TrashHolder(object):
 
-    THRESHOLD = 0.01
+    THRESHOLD = 0.1
 
     def __init__(self, market):
         self.market = market
@@ -98,7 +98,6 @@ class ThreadStrategy(SimpleStrategy):
 
     LIMIT = 10000
     PAIR = 'btc_usd'
-    FEE = 0.1
     ORDER_CLASS = OrderThread
 
     def get_threshhold(self, depth):
@@ -194,18 +193,22 @@ class ThreadStrategy(SimpleStrategy):
                 old_money = self.get_best_price(
                     order.get('amount'),
                     order.get('price'),
-                    True
+                    order.get('is_sell'),
+                    0
                 )
                 buy_money = self.get_best_price(
                     order.get('amount'),
-                    resp['asks'][0][0],
-                    False
+                    float(resp['asks'][0][0]),
+                    False,
+                    self.FEE
                 )
                 sell_money = self.get_best_price(
                     order.get('amount'),
-                    resp['bids'][0][0],
-                    True
+                    float(resp['bids'][0][0]),
+                    True,
+                    self.FEE
                 )
+                #print ('o {} b {} s {}'.format(old_money, buy_money, sell_money))
                 if order.get('is_sell'):
                     # check previous sell and current market sell
                     margin = D(1 - (old_money / sell_money)).quantize(self.prec)
@@ -224,7 +227,7 @@ class ThreadStrategy(SimpleStrategy):
                         'order': order
                     })
 
-                    if old_money > buy_money:
+                    if old_money > -buy_money:
                         await self.buy(resp, order)
                 else:
                     #previous buy and current market buy
@@ -243,7 +246,7 @@ class ThreadStrategy(SimpleStrategy):
                         'margin': margin,
                         'order': order
                     })
-                    if old_money < sell_money:
+                    if -old_money < sell_money:
                         await self.sell(resp, order)
                 old_order = order
 
