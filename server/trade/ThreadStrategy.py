@@ -59,7 +59,7 @@ class OrderThread(object):
 
 class TrashHolder(object):
 
-    THRESHOLD = 0.1
+    THRESHOLD = 0.01
 
     def __init__(self, market):
         self.market = market
