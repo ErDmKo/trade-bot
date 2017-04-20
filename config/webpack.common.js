@@ -5,7 +5,6 @@ const AssetsPlugin = require('assets-webpack-plugin');
 const ContextReplacementPlugin = require('webpack/lib/ContextReplacementPlugin');
 const CommonsChunkPlugin = require('webpack/lib/optimize/CommonsChunkPlugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
-const ForkCheckerPlugin = require('awesome-typescript-loader').ForkCheckerPlugin;
 
 const HMR = helpers.hasProcessFlag('hot');
 const METADATA = {
@@ -50,7 +49,7 @@ module.exports = function (options) {
             path: helpers.root('server/static'),
             filename: 'webpack-assets.json',
             prettyPrint: true
-        }), new ForkCheckerPlugin(), new CommonsChunkPlugin({
+        }), new CommonsChunkPlugin({
             name: ['vendor', 'polyfills']
         }), new ContextReplacementPlugin(
             /angular(\\|\/)core(\\|\/)(esm(\\|\/)front|front)(\\|\/)linker/,

@@ -101,6 +101,16 @@ class SimpleStrategy(object):
 
     async def trade(self, direction, info):
         if self.is_demo:
+            is_sell = direction == 'sell'
+            aposite_direction = 'buy' if is_sell else 'sell'
+            change_info = self.calc_money(
+                D(self.pair_info['fee']),
+                D(info['amount']),
+                D(info['price']),
+                is_sell
+            )
+            self.balance[self.currency[direction]] += change_info[direction]
+            self.balance[self.currency[aposite_direction]] += change_info[aposite_direction]
             return {
                 "demo_order": "1",
                 "funds": self.balance
@@ -148,7 +158,7 @@ class SimpleStrategy(object):
         is_sell = direction == 'sell'
         currency = self.currency[direction]
         price, volume = depth['bids' if is_sell else 'asks'][0]
-        info_amount = self.get_new_amount(currency, amount, volume)
+        info_amount = self.get_new_amount(currency, amount, float(volume))
         money = info_amount if is_sell else float(price) * info_amount
         if self.balance[currency] < money:
             self.print('Low balance {} {} need more {} '.format(
@@ -207,14 +217,16 @@ class SimpleStrategy(object):
             'buy': buy_delta * amount * price * cls.get_fee(fee, sell_delta)
         }
 
-    def get_best_price(self, amount, price, is_sell, fee):
+    def get_best_price(self, amount, price, is_sell, fee=0):
         money_change = self.calc_money(float(self.pair_info['fee']) + fee, amount, price, is_sell)
         return money_change['buy']
 
     def get_stat(self):
         return self.order
 
-    async def tick(self, resp, balance=False):
+    async def tick(self, resp, balance=False, connection=False):
+        if connection:
+            self.connection = connection
         self.depth = resp
         if not balance:
             await self.get_balance()
@@ -226,15 +238,29 @@ class SimpleStrategy(object):
                     await self.sell(resp)
                     return
         else:
-            old_money = self.get_best_price(self.order.amount, self.order.price, True)
+            old_money = self.get_best_price(
+                float(self.order.amount),
+                float(self.order.price),
+                True
+            )
             if order.is_sell:
-                best_price = self.get_best_price(self.order.amount, resp['asks'][0][0], False)
+                best_price = self.get_best_price(
+                    float(self.order.amount),
+                    float(resp['asks'][0][0]),
+                    False,
+                    self.FEE
+                )
                 if not self.is_demo:
                     self.print('buy', old_money, resp['asks'][0][0], best_price) 
                 if old_money > best_price:
                     await self.buy(resp, self.order)
             else:
-                best_price = self.get_best_price(self.order.amount, resp['bids'][0][0], True)
+                best_price = self.get_best_price(
+                    float(self.order.amount),
+                    float(resp['bids'][0][0]),
+                    True,
+                    self.FEE
+                )
                 if not self.is_demo:
                     self.print('sell', old_money, resp['bids'][0][0], best_price) 
                 if old_money < best_price:

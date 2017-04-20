@@ -171,7 +171,7 @@ class ThreadStrategy(SimpleStrategy):
                     ))
                     return
 
-    async def tick(self, resp, balance=False):
+    async def tick(self, resp, balance=False, connection=False):
         thresh_hold = self.get_threshhold(resp)
         self.depth = resp
         await self.get_order()

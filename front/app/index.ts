@@ -12,6 +12,7 @@ import { BrowserModule } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { HttpModule } from '@angular/http';
 import { RouterModule, PreloadAllModules } from '@angular/router';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ENV_PROVIDERS } from './environment';
 
@@ -38,6 +39,7 @@ const APP_PROVIDERS = [
         BrowserModule,
         FormsModule,
         HttpModule,
+        BrowserAnimationsModule
         // RouterModule.forRoot(ROUTES, { useHash: true, preloadingStrategy: PreloadAllModules })
     ],
     providers: [
