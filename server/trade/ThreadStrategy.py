@@ -9,10 +9,11 @@ class OrderThread(object):
 
     FLAG_NAME = 'is_finished'
 
-    def __init__(self, order, conn, table):
+    def __init__(self, order, conn, table, prec):
         self.order = order
         self.table = table
         self.connection = conn
+        self.prec = prec
 
     def get(self, attr):
         return getattr(self.order, attr)
@@ -24,12 +25,17 @@ class OrderThread(object):
     def get_order(self):
         return self.order
 
+    async def get_by_id(self, id):
+        return await self.connection.execute(
+            self.table.select().where(self.table.c.id == id)
+        )
+
     async def update_by_id(self, id, **kw):
         return await self.connection.execute(
-                self.table
-                    .update()
-                    .where(self.table.c.id == id)
-                    .values(**kw)
+            self.table
+                .update()
+                .where(self.table.c.id == id)
+                .values(**kw)
         )
 
     async def merge(self, order):
@@ -67,7 +73,7 @@ class TrashHolder(object):
         self.buy_info = []
 
     def get_market_threshhold(self):
-        return 1 - (float(self.market['bids'][0][0]) / float(self.market.depth['asks'][0][0]))
+        return 1 - (D(self.market['bids'][0][0]) / D(self.market.depth['asks'][0][0]))
 
     def add_order(self, order_info):
         if order_info['order'].get('is_sell'):
@@ -116,7 +122,12 @@ class ThreadStrategy(SimpleStrategy):
                 )
         )
         async for order in cursor:
-            order_obj = self.ORDER_CLASS(order, self.connection, order_table)
+            order_obj = self.ORDER_CLASS(
+                order,
+                self.connection,
+                order_table,
+                self.prec
+            )
             self.orders.append(order_obj)
 
         return self.orders
@@ -132,17 +143,18 @@ class ThreadStrategy(SimpleStrategy):
             }
         )
 
-
     async def buy(self, depth, old_order=False, amount=False):
-        new_order = await super().buy(depth, old_order, amount)
+        new_order = await super().buy(depth, old_order, amount, 0)
         if old_order and new_order:
             result = await old_order.nextStep(new_order)
+            self.print_order(new_order, 'buy', old_order)
         return new_order
 
     async def sell(self, depth, old_order=False, amount=False):
-        new_order = await super().sell(depth, old_order)
+        new_order = await super().sell(depth, old_order, amount, 0)
         if old_order and new_order:
             result = await old_order.nextStep(new_order)
+            self.print_order(new_order, 'sell', old_order)
         return new_order
 
     def print_order(self, info, direction, old_order):
@@ -191,20 +203,20 @@ class ThreadStrategy(SimpleStrategy):
                     await old_order.merge(order)
 
                 old_money = self.get_best_price(
-                    order.get('amount'),
-                    order.get('price'),
+                    D(order.get('amount')),
+                    D(order.get('price')),
                     order.get('is_sell'),
                     0
                 )
                 buy_money = self.get_best_price(
-                    order.get('amount'),
-                    float(resp['asks'][0][0]),
+                    D(order.get('amount')),
+                    D(resp['asks'][0][0]),
                     False,
                     self.FEE
                 )
                 sell_money = self.get_best_price(
-                    order.get('amount'),
-                    float(resp['bids'][0][0]),
+                    D(order.get('amount')),
+                    D(resp['bids'][0][0]),
                     True,
                     self.FEE
                 )

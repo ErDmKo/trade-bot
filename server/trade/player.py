@@ -51,34 +51,39 @@ async def main_test(loop):
             })
         pubApi = PublicAPIv3('btc_usd')
 
+        strategy_name = 'ThreadStrategy'
+
         if len(sys.argv) > 2:
             strategy_name = sys.argv[2]
-            module = __import__('server.trade.{}'.format(
-                strategy_name
-            ), fromlist=[strategy_name])
-            strategy = getattr(module, strategy_name)
-        else:
-            strategy = ThreadStrategy
+
+        module = __import__('server.trade.{}'.format(
+            strategy_name
+        ), fromlist=[strategy_name])
+        strategy = getattr(module, strategy_name)
 
         player = await strategy.create(conn, tradeApi, pubApi, True)
         clear_order = await conn.execute(db.demo_order.delete())
-        print('player')
+        print('player {}'.format(strategy_name))
         cursor = await conn.execute(
                 db.history
                     .select()
                     .where(
                         (db.history.c.pair == player.PAIR)
-                        & db.history.c.pub_date.between('2017-03-22 14:36:00', '2017-03-25 14:39:00')
+                        & db.history.c.pub_date.between('2017-03-22 14:36:00', '2017-03-31 14:39:00')
                     )
                     .order_by(db.history.c.pub_date)
                     .offset(player.OFFSET)
                     .limit(player.LIMIT)
                 )
         async for tick in cursor:
-            await player.tick(json.loads(tick.resp), {'funds': {
-                'usd': D(1000),
-                'btc': D(1)
-            }})
+            balance = getattr(player, 'balance', {
+                'usd': D(30),
+                'btc': D(0.3)
+            })
+            await player.tick(json.loads(tick.resp), {
+                'funds': balance
+            })
+        print(balance)
 
 def run_script():
    loop = asyncio.get_event_loop()

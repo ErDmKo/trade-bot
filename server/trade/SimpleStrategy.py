@@ -9,7 +9,7 @@ class SimpleStrategy(object):
     OFFSET = 0
     LIMIT = 10000
     PAIR = 'btc_usd'
-    FEE = 0.1
+    FEE = D(0.1)
 
     @classmethod
     def init_self(cls):
@@ -78,17 +78,17 @@ class SimpleStrategy(object):
         self.order = None
         return None
 
-    async def get_balance(self, currency='btc'):
+    async def get_balance(self):
+        if self.is_demo:
+            return False
         balnce_info = await self.api.call('getInfo')
         self.balance = balnce_info['funds']
         return self.balance[currency]
 
+    # amount is from new thread
+    # volume is from market best offer
     def get_new_amount(self, currency, amount, volume):
-        return float(max([
-            self.pair_info['min_amount'],
-            D(self.balance[self.currency['sell']]/1000).quantize(self.prec)
-        ]))
-
+        return self.pair_info['min_amount']
 
     def get_order_info(self, price, amount, is_sell):
         return dict(
@@ -122,14 +122,14 @@ class SimpleStrategy(object):
             rate=info['price'],
             amount = info['amount']
         )
-        if float(api_resp['received']) < info['amount']:
+        if D(api_resp['received']) < info['amount']:
             self.print('CancelOrder {}'.format(
                 api_resp['order_id']
             ))
             try:
                 result = await self.api.call(
                     'CancelOrder',
-                    order_id=api_resp['order_id']
+                    order_id = api_resp['order_id']
                 )
                 self.balance = result['funds']
                 return False
@@ -145,7 +145,7 @@ class SimpleStrategy(object):
             self.print('{} before {} now {}'.format(
                 direction,
                 old_order.price,
-                info['price'],
+                info['price']
                 )
             )
         else:
@@ -158,20 +158,20 @@ class SimpleStrategy(object):
         is_sell = direction == 'sell'
         currency = self.currency[direction]
         price, volume = depth['bids' if is_sell else 'asks'][0]
-        info_amount = self.get_new_amount(currency, amount, float(volume))
-        money = info_amount if is_sell else float(price) * info_amount
+        info_amount = self.get_new_amount(currency, amount, D(volume))
+        money = info_amount if is_sell else D(price) * info_amount
         if self.balance[currency] < money:
             self.print('Low balance {} {} need more {} '.format(
                 self.balance[currency],
                 currency,
-                (money - float(self.balance[currency]))
+                (money - D(self.balance[currency]))
                 )
             )
             return 
         info = self.get_order_info(price, info_amount, is_sell)
         return info
         
-    async def sell(self, depth, old_order=False, amount=False):
+    async def sell(self, depth, old_order=False, amount=False, print_info=1):
         info = self.get_trade_info(depth, 'sell', amount)
         if not info:
             return False
@@ -180,13 +180,14 @@ class SimpleStrategy(object):
             return False
         info['api'] = json.loads(utils.dumps(api_resp))
         order = await self.add_order(info)
-
-        self.print_order(info, 'sell', old_order)
         info['id'] = order.id
+
+        if print_info:
+            self.print_order(info, 'sell', old_order)
         return info
 
 
-    async def buy(self, depth, old_order=False, amount=False):
+    async def buy(self, depth, old_order=False, amount=False, print_info=1):
         info = self.get_trade_info(depth, 'buy', amount)
         if not info:
             return False
@@ -195,9 +196,10 @@ class SimpleStrategy(object):
             return False
         info['api'] = json.loads(utils.dumps(api_resp))
         order = await self.add_order(info)
-
-        self.print_order(info, 'buy', old_order)
         info['id'] = order.id
+
+        if print_info:
+            self.print_order(info, 'buy', old_order)
         return info
 
     @classmethod
@@ -218,7 +220,7 @@ class SimpleStrategy(object):
         }
 
     def get_best_price(self, amount, price, is_sell, fee=0):
-        money_change = self.calc_money(float(self.pair_info['fee']) + fee, amount, price, is_sell)
+        money_change = self.calc_money(D(self.pair_info['fee']) + fee, amount, price, is_sell)
         return money_change['buy']
 
     def get_stat(self):
@@ -230,6 +232,8 @@ class SimpleStrategy(object):
         self.depth = resp
         if not balance:
             await self.get_balance()
+        else:
+            self.balance = balance['funds']
         order = await self.get_order()
         if not order:
             self.print('init order is {}'.format(order))
@@ -239,14 +243,14 @@ class SimpleStrategy(object):
                     return
         else:
             old_money = self.get_best_price(
-                float(self.order.amount),
-                float(self.order.price),
+                D(self.order.amount),
+                D(self.order.price),
                 True
             )
             if order.is_sell:
                 best_price = self.get_best_price(
-                    float(self.order.amount),
-                    float(resp['asks'][0][0]),
+                    D(self.order.amount),
+                    D(resp['asks'][0][0]),
                     False,
                     self.FEE
                 )
@@ -256,8 +260,8 @@ class SimpleStrategy(object):
                     await self.buy(resp, self.order)
             else:
                 best_price = self.get_best_price(
-                    float(self.order.amount),
-                    float(resp['bids'][0][0]),
+                    D(self.order.amount),
+                    D(resp['bids'][0][0]),
                     True,
                     self.FEE
                 )
