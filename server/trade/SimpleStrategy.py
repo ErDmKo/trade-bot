@@ -83,7 +83,6 @@ class SimpleStrategy(object):
             return False
         balnce_info = await self.api.call('getInfo')
         self.balance = balnce_info['funds']
-        return self.balance[currency]
 
     # amount is from new thread
     # volume is from market best offer

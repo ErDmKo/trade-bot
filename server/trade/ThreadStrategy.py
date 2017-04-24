@@ -228,9 +228,9 @@ class ThreadStrategy(SimpleStrategy):
                         self.print(
                             'Try to buy - previous {} sell {} now {} with fee {} marign {}'.format(
                                 order.get('id'),
-                                old_money,
+                                old_money.quantize(self.prec),
                                 resp['asks'][0][0],
-                                buy_money,
+                                buy_money.quantize(self.prec),
                                 margin
                             )
                         )
@@ -248,9 +248,9 @@ class ThreadStrategy(SimpleStrategy):
                         self.print(
                             'Try to sell - previous {} buy {} now {} with fee {} marign {}'.format(
                                 order.get('id'),
-                                old_money,
+                                old_money.quantize(self.prec),
                                 resp['bids'][0][0],
-                                sell_money,
+                                sell_money.quantize(self.prec),
                                 margin
                             )
                         )
