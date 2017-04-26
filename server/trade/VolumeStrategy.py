@@ -10,9 +10,8 @@ class VolumeThread(OrderThread):
     async def nextStep(self, nextOrder=False):
         if not nextOrder:
             raise Exception('WTF dude?!?!')
-
         order_table = self.table
-        new_amount = D(self.order.amount) - nextOrder['amount']
+        new_amount = D(self.order.extra['amount']) - nextOrder['amount']
         if new_amount.quantize(self.prec) <= 0:
             await self.update_by_id(self.order.id,
                 extra = sa.cast(
@@ -32,28 +31,42 @@ class VolumeThread(OrderThread):
                     )), JSONB
                 )
             )
-        update_order = await self.get_by_id(self.order.id)
-        async for order in update_order:
-            self.order = order
+        await self.read()
         return await self.update_by_id(nextOrder['id'],
             extra = sa.cast(
                 sa.cast(func.coalesce(order_table.c.extra, '{}'), JSONB)
                 .concat(func.jsonb_build_object(
-                    'parent', self.order.id
+                    'parent', self.order.id,
                 )), JSONB
             )
         )
 
 class VolumeStrategy(ThreadStrategy):
 
-    LIMIT = 100000
+    LIMIT = 20000
     ORDER_CLASS = VolumeThread
-    MAX_VOLUME = D(0.5) # % form balance
+    MAX_VOLUME = D(5) # % form balance
+
+    async def add_order(self, info):
+        if not info['api']:
+            raise Exception('WTF dude?!?!')
+
+        info['extra'] = {
+            self.ORDER_CLASS.FLAG_NAME: '0',
+            'amount': str(info['amount'])
+        }
+
+        result = await self.connection.execute(
+            self.get_order_table().insert().values(**info)
+        )
+        result_info = await result.first()
+        return result_info
 
     def print_order(self, info, direction, old_order):
         if old_order:
-            self.print('{} before {} amount left {} new child price {} amount {}'.format(
+            self.print('{} before id {} price {} amount left {} new child price {} amount {}'.format(
                 direction,
+                old_order.get('id'),
                 old_order.get('price'),
                 old_order.get('extra').get('amount'),
                 info['price'],
@@ -67,18 +80,26 @@ class VolumeStrategy(ThreadStrategy):
                 info['amount']
                 )
             )
-    
-    def get_new_amount(self, currency, amount, volume):
+
+    def get_new_amount(self, currency, amount, volume, direction, price):
         '''
             amount is from new thread
             volume is from market best offer
         '''
         if amount:
             return amount
-        max_volume = D(self.balance[self.currency['sell']] * (self.MAX_VOLUME/100)).quantize(self.prec)
+
+        amounts = {
+            'sell': D(self.balance[self.currency['sell']]),
+            'buy': D(self.balance[self.currency['buy']]) / D(price)
+        }
+        '''
+        print('sell - {sell} buy - {buy}'.format(**amounts))
+        print('selected - {}'.format(amounts[direction]))
+        '''
         new_volume = min([
             volume,
-            max_volume
+            (amounts[direction] * (self.MAX_VOLUME/100)).quantize(self.prec)
         ])
         return max([
             D(self.pair_info['min_amount']),

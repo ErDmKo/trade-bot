@@ -25,6 +25,11 @@ class OrderThread(object):
     def get_order(self):
         return self.order
 
+    async def read(self):
+        update_order = await self.get_by_id(self.order.id)
+        async for order in update_order:
+            self.order = order
+
     async def get_by_id(self, id):
         return await self.connection.execute(
             self.table.select().where(self.table.c.id == id)
@@ -168,11 +173,13 @@ class ThreadStrategy(SimpleStrategy):
             if amount > 0 and currency in self.directions:
                 if not direction:
                     direction = self.directions[currency]
+
+                if self.currency[direction] == currency:
                     self.print('Try to start new thread {}'.format(direction))
-                    order = await getattr(self, direction)(resp)
-                elif self.currency[direction] == currency:
-                    self.print('Try to start new thread {}'.format(direction))
-                    order = await getattr(self, direction)(resp)
+                    order = await getattr(self, direction)(
+                        resp, 
+                        amount=D(self.pair_info['min_amount'])
+                    )
 
                 if order:
                     self.print('New thread currency {} price {} amount {} direction {}'.format(

@@ -86,7 +86,7 @@ class SimpleStrategy(object):
 
     # amount is from new thread
     # volume is from market best offer
-    def get_new_amount(self, currency, amount, volume):
+    def get_new_amount(self, currency, amount, volume, is_sell, price):
         return self.pair_info['min_amount']
 
     def get_order_info(self, price, amount, is_sell):
@@ -157,7 +157,7 @@ class SimpleStrategy(object):
         is_sell = direction == 'sell'
         currency = self.currency[direction]
         price, volume = depth['bids' if is_sell else 'asks'][0]
-        info_amount = self.get_new_amount(currency, amount, D(volume))
+        info_amount = self.get_new_amount(currency, amount, D(volume), direction, price)
         money = info_amount if is_sell else D(price) * info_amount
         if self.balance[currency] < money:
             self.print('Low balance {} {} need more {} '.format(

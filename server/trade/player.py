@@ -69,7 +69,7 @@ async def main_test(loop):
                     .select()
                     .where(
                         (db.history.c.pair == player.PAIR)
-                        & db.history.c.pub_date.between('2017-03-22 14:36:00', '2017-03-31 14:39:00')
+                        & db.history.c.pub_date.between('2017-03-10 14:36:00', '2017-03-20 14:39:00')
                     )
                     .order_by(db.history.c.pub_date)
                     .offset(player.OFFSET)
@@ -83,6 +83,7 @@ async def main_test(loop):
             await player.tick(json.loads(tick.resp), {
                 'funds': balance
             })
+
         print(balance)
 
 def run_script():
