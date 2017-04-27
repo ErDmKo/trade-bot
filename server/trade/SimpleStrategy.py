@@ -23,7 +23,7 @@ class SimpleStrategy(object):
         self.api = tradeApi
         self.pubApi = pubApi
         self.connection = connection
-        self.prec = D(10) ** -3
+        self.prec = D(10) ** -6
         currency = self.PAIR.split('_')
         self.currency = {
             'buy': currency[1],
@@ -55,7 +55,7 @@ class SimpleStrategy(object):
          self.prec = D(10) ** -self.pair_info['decimal_places']
          return self.pair_info
 
-    async def add_order(self, info):
+    async def add_order(self, info, depth=False):
         if not info['api']:
             raise Exception('WTF dude?!?!')
 
@@ -178,7 +178,7 @@ class SimpleStrategy(object):
         if not api_resp:
             return False
         info['api'] = json.loads(utils.dumps(api_resp))
-        order = await self.add_order(info)
+        order = await self.add_order(info, depth)
         info['id'] = order.id
 
         if print_info:
@@ -194,7 +194,7 @@ class SimpleStrategy(object):
         if not api_resp:
             return False
         info['api'] = json.loads(utils.dumps(api_resp))
-        order = await self.add_order(info)
+        order = await self.add_order(info, depth)
         info['id'] = order.id
 
         if print_info:

@@ -2,11 +2,17 @@ import asyncio
 import json
 import sys
 from decimal import Decimal as D
+
+import sqlalchemy as sa
+
 from server import db
 from server import utils 
 from ..btcelib import TradeAPIv1, PublicAPIv3
 from .SimpleStrategy import SimpleStrategy
 from .ThreadStrategy import ThreadStrategy
+
+START_TIME = '2017-03-10 14:36:00'
+END_TIME = '2017-03-20 14:39:00'
 
 async def load_strategy(app, strategy_name):
     while True:
@@ -48,7 +54,7 @@ async def main_test(loop):
         tradeApi = TradeAPIv1({
             'Key': conf['api']['API_KEY'],
             'Secret': conf['api']['API_SECRET']
-            })
+        })
         pubApi = PublicAPIv3('btc_usd')
 
         strategy_name = 'ThreadStrategy'
@@ -69,7 +75,8 @@ async def main_test(loop):
                     .select()
                     .where(
                         (db.history.c.pair == player.PAIR)
-                        & db.history.c.pub_date.between('2017-03-10 14:36:00', '2017-03-20 14:39:00')
+                        & (sa.sql.func.random() < 0.05)
+                        & db.history.c.pub_date.between(START_TIME, END_TIME)
                     )
                     .order_by(db.history.c.pub_date)
                     .offset(player.OFFSET)
@@ -77,10 +84,12 @@ async def main_test(loop):
                 )
         async for tick in cursor:
             balance = getattr(player, 'balance', {
-                'usd': D(30),
-                'btc': D(0.3)
+                'usd': D(300),
+                'btc': D(0.03)
             })
-            await player.tick(json.loads(tick.resp), {
+            depth = json.loads(tick.resp)
+            depth['pub_date'] = tick.pub_date
+            await player.tick(depth, {
                 'funds': balance
             })
 

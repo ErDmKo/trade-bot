@@ -11,14 +11,15 @@ class VolumeThread(OrderThread):
         if not nextOrder:
             raise Exception('WTF dude?!?!')
         order_table = self.table
-        new_amount = D(self.order.extra['amount']) - nextOrder['amount']
-        if new_amount.quantize(self.prec) <= 0:
+        await self.read()
+        new_amount = (D(self.order.extra['amount']) - nextOrder['amount']).quantize(self.prec)
+        if new_amount <= 0:
             await self.update_by_id(self.order.id,
                 extra = sa.cast(
                     sa.cast(func.coalesce(order_table.c.extra, '{}'), JSONB)
                     .concat(func.jsonb_build_object(
                         self.FLAG_NAME, '1',
-                        'amount', 0
+                        'amount', str(new_amount)
                     )), JSONB
                 )
             )
@@ -27,7 +28,7 @@ class VolumeThread(OrderThread):
                 extra = sa.cast(
                     sa.cast(func.coalesce(order_table.c.extra, '{}'), JSONB)
                     .concat(func.jsonb_build_object(
-                        'amount', new_amount
+                        'amount', str(new_amount)
                     )), JSONB
                 )
             )
@@ -45,11 +46,14 @@ class VolumeStrategy(ThreadStrategy):
 
     LIMIT = 20000
     ORDER_CLASS = VolumeThread
-    MAX_VOLUME = D(5) # % form balance
+    MAX_VOLUME = D(3) # % form balance less precent is hight accuracy and low speed
 
-    async def add_order(self, info):
+    async def add_order(self, info, depth):
         if not info['api']:
             raise Exception('WTF dude?!?!')
+
+        if self.is_demo:
+            info['pub_date'] = depth['pub_date']
 
         info['extra'] = {
             self.ORDER_CLASS.FLAG_NAME: '0',
