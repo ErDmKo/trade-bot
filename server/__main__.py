@@ -10,5 +10,7 @@ if len(sys.argv) > 1:
         sql()
     if prog == 'play':
         play()
+    print('NO Action! main start')
+    main()
 else:
     main()

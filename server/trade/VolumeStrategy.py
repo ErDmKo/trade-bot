@@ -46,7 +46,7 @@ class VolumeStrategy(ThreadStrategy):
 
     LIMIT = 20000
     ORDER_CLASS = VolumeThread
-    MAX_VOLUME = D(3) # % form balance less precent is hight accuracy and low speed
+    MAX_VOLUME = D(5) # % form balance less precent is hight accuracy and low speed
 
     async def add_order(self, info, depth):
         if not info['api']:

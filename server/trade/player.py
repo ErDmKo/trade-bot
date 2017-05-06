@@ -11,8 +11,8 @@ from ..btcelib import TradeAPIv1, PublicAPIv3
 from .SimpleStrategy import SimpleStrategy
 from .ThreadStrategy import ThreadStrategy
 
-START_TIME = '2017-03-10 14:36:00'
-END_TIME = '2017-03-20 14:39:00'
+START_TIME = '2017-04-16 00:00'
+END_TIME = '2017-05-08 23:59'
 
 async def load_strategy(app, strategy_name):
     while True:
@@ -75,25 +75,27 @@ async def main_test(loop):
                     .select()
                     .where(
                         (db.history.c.pair == player.PAIR)
-                        & (sa.sql.func.random() < 0.05)
+                        & (sa.sql.func.random() < 0.005)
                         & db.history.c.pub_date.between(START_TIME, END_TIME)
                     )
                     .order_by(db.history.c.pub_date)
                     .offset(player.OFFSET)
                     .limit(player.LIMIT)
                 )
+        index = 0
         async for tick in cursor:
             balance = getattr(player, 'balance', {
-                'usd': D(300),
-                'btc': D(0.03)
+                'usd': D(3),
+                'btc': D(0.3)
             })
             depth = json.loads(tick.resp)
             depth['pub_date'] = tick.pub_date
             await player.tick(depth, {
                 'funds': balance
             })
+            index += 1
 
-        print(balance)
+        print(balance, index)
 
 def run_script():
    loop = asyncio.get_event_loop()

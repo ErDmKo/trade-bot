@@ -59,6 +59,9 @@ class SimpleStrategy(object):
         if not info['api']:
             raise Exception('WTF dude?!?!')
 
+        if self.is_demo:
+            info['pub_date'] = depth['pub_date']
+
         result = await self.connection.execute(
             self.get_order_table().insert().values(**info)
         )

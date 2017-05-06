@@ -48,7 +48,7 @@ def init():
     setup_middlewares(app)
     setup_info_updater(app)
     prog = sys.argv[1] if len(sys.argv) > 1 else ''
-    add_strategy(app, 'TestStrategy' if prog == 'test' else 'ThreadStrategy')
+    add_strategy(app, prog if prog else 'ThreadStrategy')
 
     return app
 
