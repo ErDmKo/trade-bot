@@ -8,9 +8,10 @@ if len(sys.argv) > 1:
     prog = sys.argv[1]
     if prog == 'sql':
         sql()
-    if prog == 'play':
+    elif prog == 'play':
         play()
-    print('NO Action! main start')
-    main()
+    else:
+        print('NO Action! main start')
+        main()
 else:
     main()

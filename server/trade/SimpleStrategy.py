@@ -16,8 +16,10 @@ class SimpleStrategy(object):
         return cls()
 
     @classmethod
-    async def create(cls, connection, tradeApi, pubApi, is_demo=False, log=False):
+    async def create(cls, connection, tradeApi, pubApi, is_demo=False, log=False, pair=False):
         self = cls.init_self()
+        if pair:
+            self.PAIR = pair
         self.is_demo = is_demo
         self.log = log
         self.api = tradeApi

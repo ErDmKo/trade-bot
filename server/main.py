@@ -27,7 +27,7 @@ def init():
     conf = load_config(str(pathlib.Path('.') / 'config' / 'base.yaml'))
     app['config'] = conf
 
-    app['pubapi'] = btcelib.PublicAPIv3('btc_usd', 'btc_rur')
+    app['pubapi'] = btcelib.PublicAPIv3('btc_usd', 'eth_btc', 'eth_usd')
     app['privapi'] = btcelib.TradeAPIv1({
         'Key': conf['api']['API_KEY'],
         'Secret': conf['api']['API_SECRET']

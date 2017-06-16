@@ -12,7 +12,7 @@ from .SimpleStrategy import SimpleStrategy
 from .ThreadStrategy import ThreadStrategy
 
 START_TIME = '2017-04-16 00:00'
-END_TIME = '2017-05-08 23:59'
+END_TIME = '2017-04-16 02:59'
 
 async def load_strategy(app, strategy_name):
     while True:
@@ -57,7 +57,7 @@ async def main_test(loop):
         })
         pubApi = PublicAPIv3('btc_usd')
 
-        strategy_name = 'ThreadStrategy'
+        strategy_name = 'MultiplePairs'
 
         if len(sys.argv) > 2:
             strategy_name = sys.argv[2]
@@ -67,15 +67,14 @@ async def main_test(loop):
         ), fromlist=[strategy_name])
         strategy = getattr(module, strategy_name)
 
-        player = await strategy.create(conn, tradeApi, pubApi, True)
+        player = await strategy.create(conn, tradeApi, pubApi, True, pair_list = ['btc_usd', 'btc_rur'])
         clear_order = await conn.execute(db.demo_order.delete())
         print('player {}'.format(strategy_name))
         cursor = await conn.execute(
                 db.history
                     .select()
                     .where(
-                        (db.history.c.pair == player.PAIR)
-                        & (sa.sql.func.random() < 0.005)
+                        (sa.sql.func.random() < 0.005)
                         & db.history.c.pub_date.between(START_TIME, END_TIME)
                     )
                     .order_by(db.history.c.pub_date)
@@ -90,7 +89,7 @@ async def main_test(loop):
             })
             depth = json.loads(tick.resp)
             depth['pub_date'] = tick.pub_date
-            await player.tick(depth, {
+            await player.tick(depth, tick.pair, {
                 'funds': balance
             })
             index += 1
