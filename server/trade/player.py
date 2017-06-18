@@ -8,11 +8,10 @@ import sqlalchemy as sa
 from server import db
 from server import utils 
 from ..btcelib import TradeAPIv1, PublicAPIv3
-from .SimpleStrategy import SimpleStrategy
-from .ThreadStrategy import ThreadStrategy
+from .MultiplePairs import MultiplePairs
 
-START_TIME = '2017-04-16 00:00'
-END_TIME = '2017-04-16 02:59'
+START_TIME = '2017-06-16 00:00'
+END_TIME = '2017-06-18 23:59'
 
 async def load_strategy(app, strategy_name):
     while True:
@@ -23,24 +22,26 @@ async def load_strategy(app, strategy_name):
 
         async with engine.acquire() as conn:
             tradeApi = app['privapi']
-            pubApi = PublicAPIv3('btc_usd')
+            pubApi = PublicAPIv3(*MultiplePairs.PAIRS)
             module = __import__('server.trade.{}'.format(
                 strategy_name
             ), fromlist=[strategy_name])
             print(strategy_name)
-            app['strategy'] = await getattr(module, strategy_name).create(
+            app['strategy'] = await MultiplePairs.create(
                 conn,
                 tradeApi,
                 pubApi,
-                False,
-                app['socket_channels']['log']
+                pair_list = MultiplePairs.PAIRS,
+                strategy = getattr(module, strategy_name),
+                is_demo = False,
+                log = app['socket_channels']['log']
             )
         break
 
 async def on_shutdown(app):
     app['strategy_maker'].cancel()
 
-def add_strategy(app, strategy_name='ThreadStrategy'):
+def add_strategy(app, strategy_name='VolumeStrategy'):
     app['strategy_maker'] = asyncio.ensure_future(
         load_strategy(app, strategy_name),
         loop=app.loop
@@ -55,7 +56,7 @@ async def main_test(loop):
             'Key': conf['api']['API_KEY'],
             'Secret': conf['api']['API_SECRET']
         })
-        pubApi = PublicAPIv3('btc_usd')
+        pubApi = PublicAPIv3(*MultiplePairs.PAIRS)
 
         strategy_name = 'MultiplePairs'
 
@@ -67,15 +68,21 @@ async def main_test(loop):
         ), fromlist=[strategy_name])
         strategy = getattr(module, strategy_name)
 
-        player = await strategy.create(conn, tradeApi, pubApi, True, pair_list = ['btc_usd', 'btc_rur'])
+        player = await strategy.create(
+            conn,
+            tradeApi,
+            pubApi,
+            is_demo = True,
+            pair_list = MultiplePairs.PAIRS
+        )
         clear_order = await conn.execute(db.demo_order.delete())
         print('player {}'.format(strategy_name))
         cursor = await conn.execute(
                 db.history
                     .select()
                     .where(
-                        (sa.sql.func.random() < 0.005)
-                        & db.history.c.pub_date.between(START_TIME, END_TIME)
+                        #(sa.sql.func.random() < 0.1) &
+                        db.history.c.pub_date.between(START_TIME, END_TIME)
                     )
                     .order_by(db.history.c.pub_date)
                     .offset(player.OFFSET)
@@ -84,8 +91,10 @@ async def main_test(loop):
         index = 0
         async for tick in cursor:
             balance = getattr(player, 'balance', {
-                'usd': D(3),
-                'btc': D(0.3)
+                'usd': D(100),
+                'btc': D(0.08),
+                'rur': D(0),
+                'eth': D(0)
             })
             depth = json.loads(tick.resp)
             depth['pub_date'] = tick.pub_date

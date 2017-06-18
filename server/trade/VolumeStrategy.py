@@ -79,20 +79,22 @@ class VolumeStrategy(ThreadStrategy):
 
     def print_order(self, info, direction, old_order):
         if old_order:
-            self.print('{} before id {} price {} amount left {} new child price {} amount {}'.format(
+            self.print('{} before id {} price {} amount left {} new child price {} amount {} {}'.format(
                 direction,
                 old_order.get('id'),
                 old_order.get('price'),
                 old_order.get('extra').get('amount'),
                 info['price'],
-                info['amount']
+                info['amount'],
+                self.PAIR
                 )
             )
         else:
-            self.print('{} before init now price {} amount {}'.format(
+            self.print('{} before init now price {} amount {} {}'.format(
                 direction,
                 info['price'],
-                info['amount']
+                info['amount'],
+                self.PAIR
                 )
             )
 

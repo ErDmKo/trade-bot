@@ -169,11 +169,11 @@ class ThreadStrategy(SimpleStrategy):
 
     async def start_new_thread(self, resp, direction=False):
         order = False
+        self.print('init {}'.format(self.PAIR))
         for currency, amount in self.balance.items():
             if amount > 0 and currency in self.directions:
                 if not direction:
                     direction = self.directions[currency]
-
                 if self.currency[direction] == currency:
                     self.print('Try to start new thread {}'.format(direction))
                     order = await getattr(self, direction)(
@@ -200,8 +200,7 @@ class ThreadStrategy(SimpleStrategy):
             self.balance = balance['funds']
 
         if not len(self.orders):
-            self.print('init')
-            return await self.start_new_thread(resp, 'sell')
+            return await self.start_new_thread(resp)
         else:
             old_order = False
             for order in self.orders:
@@ -233,12 +232,13 @@ class ThreadStrategy(SimpleStrategy):
                     margin = D(1 - (old_money / sell_money)).quantize(self.prec)
                     if not self.is_demo and abs(margin) < thresh_hold.THRESHOLD:
                         self.print(
-                            'Try to buy - previous {} sell {} now {} with fee {} marign {}'.format(
+                            'Try to buy - previous {} sell {} now {} with fee {} marign {} {}'.format(
                                 order.get('id'),
                                 old_money.quantize(self.prec),
                                 resp['asks'][0][0],
                                 buy_money.quantize(self.prec),
-                                margin
+                                margin,
+                                self.PAIR
                             )
                         )
                     thresh_hold.add_order({
@@ -253,12 +253,13 @@ class ThreadStrategy(SimpleStrategy):
                     margin = D((old_money / buy_money) - 1).quantize(self.prec)
                     if not self.is_demo and abs(margin) < thresh_hold.THRESHOLD:
                         self.print(
-                            'Try to sell - previous {} buy {} now {} with fee {} marign {}'.format(
+                            'Try to sell - previous {} buy {} now {} with fee {} marign {} {}'.format(
                                 order.get('id'),
                                 old_money.quantize(self.prec),
                                 resp['bids'][0][0],
                                 sell_money.quantize(self.prec),
-                                margin
+                                margin,
+                                self.PAIR
                             )
                         )
                     thresh_hold.add_order({

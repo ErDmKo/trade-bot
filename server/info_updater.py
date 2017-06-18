@@ -28,13 +28,11 @@ async def update_info(app):
         if app.get('strategy'):
             strategy = app.get('strategy')
             for pair, info in depth_info.items():
-                if strategy.PAIR == pair:
-                    async with app['db'].acquire() as conn:
-                        try:
-                            await app['strategy'].tick(info, balans_info, conn)
-                        except Exception as e:
-                            print('Error')
-                            print_exception()
+                try:
+                    await app['strategy'].tick(info, pair, balans_info)
+                except Exception as e:
+                    print('Error')
+                    print_exception()
 
         channels['balance_socket'].broadcast(balans_info)
         channels['depth_socket'].broadcast(depth_info)

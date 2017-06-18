@@ -7,7 +7,7 @@ from server import utils
 class SimpleStrategy(object):
 
     OFFSET = 0
-    LIMIT = 10000
+    LIMIT = 100000
     PAIR = 'btc_usd'
     FEE = D(0.1)
 
@@ -41,11 +41,11 @@ class SimpleStrategy(object):
         await self.get_balance()
         return self
 
-    def print(self, string):
-        print(string)
+    def print(self, *args):
+        print(*args)
         if self.log:
             self.log.broadcast({
-                'message': string
+                'message': ' '.join(args)
             })
 
     def get_order_table(self):
@@ -146,16 +146,19 @@ class SimpleStrategy(object):
 
     def print_order(self, info, direction, old_order):
         if old_order:
-            self.print('{} before {} now {}'.format(
+            self.print('{} before {} now {} {}'.format(
                 direction,
                 old_order.price,
-                info['price']
+                info['price'],
+                self.PAIR
                 )
             )
         else:
-            self.print('{} before init now {}'.format(
+            self.print('{} before init now {} {}'.format(
                 direction,
-                info['price'])
+                info['price'],
+                self.PAIR
+                )
             )
 
     def get_trade_info(self, depth, direction, amount=False):

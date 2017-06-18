@@ -14,6 +14,7 @@ from .info_updater import setup_info_updater
 from .middlewares import setup_middlewares
 from .db import close_pg, init_pg
 from .trade.player import add_strategy
+from .trade.MultiplePairs import MultiplePairs
 
 from server import btcelib 
 
@@ -27,7 +28,7 @@ def init():
     conf = load_config(str(pathlib.Path('.') / 'config' / 'base.yaml'))
     app['config'] = conf
 
-    app['pubapi'] = btcelib.PublicAPIv3('btc_usd', 'eth_btc', 'eth_usd')
+    app['pubapi'] = btcelib.PublicAPIv3(*MultiplePairs.PAIRS)
     app['privapi'] = btcelib.TradeAPIv1({
         'Key': conf['api']['API_KEY'],
         'Secret': conf['api']['API_SECRET']
@@ -48,7 +49,7 @@ def init():
     setup_middlewares(app)
     setup_info_updater(app)
     prog = sys.argv[1] if len(sys.argv) > 1 else ''
-    add_strategy(app, prog if prog else 'ThreadStrategy')
+    add_strategy(app, prog if prog else 'VolumeStrategy')
 
     return app
 
