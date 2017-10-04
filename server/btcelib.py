@@ -99,7 +99,7 @@ except ImportError:
     from json import loads as jsonloads
 
 API_REFRESH = 2            # data refresh time
-BTCE_HOST = 'btc-e.com'    # BTC-E host (HTTP/SSL)
+BTCE_HOST = 'wex.nz'       # BTC-E host (HTTP/SSL)
 CF_COOKIE = '__cfduid'     # CloudFlare security cookie
 HTTP_TIMEOUT = 60          # connection timeout (max 60 sec)
 
