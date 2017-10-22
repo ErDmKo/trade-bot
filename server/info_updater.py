@@ -1,10 +1,13 @@
 import asyncio
 import aiohttp
 import json
+import logging
 import datetime
 from .utils import dumps
 from .db import history
 import sys, traceback
+
+logger = logging.getLogger(__name__)
 
 def print_exception():
     exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -23,7 +26,7 @@ async def update_info(app):
             continue
 
         channels = app['socket_channels']
-        print('tik - {}'.format(datetime.datetime.now().isoformat()))
+        logger.info('tik - {}'.format(datetime.datetime.now().isoformat()))
 
         if app.get('strategy'):
             strategy = app.get('strategy')

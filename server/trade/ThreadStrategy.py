@@ -1,5 +1,6 @@
 from server import db
 import sqlalchemy as sa
+import logging
 from decimal import Decimal as D
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
@@ -8,6 +9,7 @@ from .SimpleStrategy import SimpleStrategy
 class OrderThread(object):
 
     FLAG_NAME = 'is_finished'
+    logger = logging.getLogger(__name__)
 
     def __init__(self, order, conn, table, prec):
         self.order = order
@@ -110,6 +112,7 @@ class ThreadStrategy(SimpleStrategy):
     LIMIT = 10000
     PAIR = 'btc_usd'
     ORDER_CLASS = OrderThread
+    logger = logging.getLogger(__name__)
 
     def get_threshhold(self, depth):
         return TrashHolder(depth)    

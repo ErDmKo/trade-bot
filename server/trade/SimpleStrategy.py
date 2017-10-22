@@ -1,4 +1,4 @@
-import json
+import json, logging
 import sqlalchemy as sa
 from decimal import Decimal as D
 from server import db
@@ -10,6 +10,7 @@ class SimpleStrategy(object):
     LIMIT = 100000
     PAIR = 'btc_usd'
     FEE = D(0.1)
+    logger = logging.getLogger(__name__)
 
     @classmethod
     def init_self(cls):
@@ -42,10 +43,11 @@ class SimpleStrategy(object):
         return self
 
     def print(self, *args):
-        print(*args)
+        message = ' '.join(args)
+        self.logger.info(message)
         if self.log:
             self.log.broadcast({
-                'message': ' '.join(args)
+                'message': message
             })
 
     def get_order_table(self):

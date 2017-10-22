@@ -1,11 +1,14 @@
 from decimal import Decimal as D
 import sqlalchemy as sa
+import logging
 from sqlalchemy.sql import func
 from sqlalchemy.dialects.postgresql import JSONB
 from .ThreadStrategy import ThreadStrategy, OrderThread
 
 class VolumeThread(OrderThread):
+
     FLAG_NAME = 'is_exceed'
+    logger = logging.getLogger(__name__)
 
     async def merge(self, order):
         return await self.update_by_id(self.order.id,

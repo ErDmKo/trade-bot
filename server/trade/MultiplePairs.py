@@ -1,3 +1,4 @@
+import logging
 from .VolumeStrategy import VolumeStrategy
 
 class MultiplePairs(object):
@@ -7,6 +8,7 @@ class MultiplePairs(object):
     OFFSET = 0
     LIMIT = 100000
     PAIRS = 'eth_usd', 'eth_btc', 'btc_usd',
+    logger = logging.getLogger(__name__)
 
     @classmethod
     def init_self(cls):
