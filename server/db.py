@@ -6,6 +6,8 @@ import asyncio
 import pathlib
 import sys
 from .utils import load_config, DecimalEncoder
+import logging
+logger = logging.getLogger(__name__)
 
 meta = sa.MetaData()
 
@@ -77,10 +79,10 @@ async def add_order(conn, price, pair, amount, is_sell, api):
         )
     )
     result_info = await result.first()
-    print(result_info)
+    logger.info(result_info)
 
 def command_fn(command):
-    print('{} - undefined'.format(command))
+    logger.info('{} - undefined'.format(command))
 
 async def main_test(loop):
     conf = load_config()

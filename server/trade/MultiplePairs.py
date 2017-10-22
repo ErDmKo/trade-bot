@@ -37,11 +37,13 @@ class MultiplePairs(object):
                 pubApi,
                 is_demo = is_demo,
                 log = log,
-                pair = pair)
+                pair_list = (pair,)
+            )
         return self
 
     async def tick(self, resp, pair, balance=False):
         if self.STORE.get(pair):
-            await self.STORE[pair].tick(resp, balance)
+            self.logger.info(pair)
+            await self.STORE[pair].tick(resp, pair, balance)
             if self.is_demo:
                 self.balance = self.STORE[pair].balance

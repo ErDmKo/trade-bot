@@ -72,7 +72,13 @@ class OrderThread(object):
 
 class TrashHolder(object):
 
-    THRESHOLD = 0.01
+    '''
+    We start new thread
+    if market prices is go away
+    form cerrent threads
+    0.01 - 1%
+    '''
+    THRESHOLD = 0.015
 
     def __init__(self, market):
         self.market = market
@@ -193,7 +199,9 @@ class ThreadStrategy(SimpleStrategy):
                     ))
                     return
 
-    async def tick(self, resp, balance=False, connection=False):
+    async def tick(self, resp, pair, balance=False, connection=False):
+        if not pair == self.PAIR:
+            return
         thresh_hold = self.get_threshhold(resp)
         self.depth = resp
         await self.get_order()
@@ -211,18 +219,21 @@ class ThreadStrategy(SimpleStrategy):
                 if old_order and old_order.get('price') == order.get('price'):
                     await old_order.merge(order)
 
+                # spended money
                 old_money = self.get_best_price(
                     D(order.get('amount')),
                     D(order.get('price')),
                     order.get('is_sell'),
                     0
                 )
+                # if we buy now
                 buy_money = self.get_best_price(
                     D(order.get('amount')),
                     D(resp['asks'][0][0]),
                     False,
                     self.FEE
                 )
+                # if we sell now
                 sell_money = self.get_best_price(
                     D(order.get('amount')),
                     D(resp['bids'][0][0]),

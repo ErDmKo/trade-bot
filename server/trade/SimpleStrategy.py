@@ -9,7 +9,7 @@ class SimpleStrategy(object):
     OFFSET = 0
     LIMIT = 100000
     PAIR = 'btc_usd'
-    FEE = D(0.1)
+    FEE = D(0.2)
     logger = logging.getLogger(__name__)
 
     @classmethod
@@ -17,10 +17,11 @@ class SimpleStrategy(object):
         return cls()
 
     @classmethod
-    async def create(cls, connection, tradeApi, pubApi, is_demo=False, log=False, pair=False):
+    async def create(cls, connection, tradeApi, pubApi, is_demo=False, log=False, pair_list=False):
         self = cls.init_self()
-        if pair:
-            self.PAIR = pair
+        if pair_list:
+            self.PAIR = pair_list[0]
+            self.PAIRS = self.PAIR,
         self.is_demo = is_demo
         self.log = log
         self.api = tradeApi
@@ -91,9 +92,7 @@ class SimpleStrategy(object):
         balnce_info = await self.api.call('getInfo')
         self.balance = balnce_info['funds']
 
-    # amount is from new thread
-    # volume is from market best offer
-    def get_new_amount(self, currency, amount, volume, is_sell, price):
+    def get_new_amount(self, volume, directions, price, old_order):
         return self.pair_info['min_amount']
 
     def get_order_info(self, price, amount, is_sell):
@@ -163,14 +162,15 @@ class SimpleStrategy(object):
                 )
             )
 
-    def get_trade_info(self, depth, direction, amount=False):
+    def get_trade_info(self, depth, direction, amount=False, old_order=False):
         is_sell = direction == 'sell'
         currency = self.currency[direction]
         price, volume = depth['bids' if is_sell else 'asks'][0]
-        info_amount = self.get_new_amount(currency, amount, D(volume), direction, price)
+        info_amount = amount if amount else self.get_new_amount(D(volume), direction, price, old_order)
         money = info_amount if is_sell else D(price) * info_amount
         if self.balance[currency] < money:
-            self.print('Low balance {} {} need more {} '.format(
+            self.print('{} Low balance {} {} need more {} '.format(
+                self.PAIR,
                 self.balance[currency],
                 currency,
                 (money - D(self.balance[currency]))
@@ -181,7 +181,7 @@ class SimpleStrategy(object):
         return info
         
     async def sell(self, depth, old_order=False, amount=False, print_info=1):
-        info = self.get_trade_info(depth, 'sell', amount)
+        info = self.get_trade_info(depth, 'sell', amount, old_order)
         if not info:
             return False
         api_resp = await self.trade('sell', info)
@@ -197,7 +197,7 @@ class SimpleStrategy(object):
 
 
     async def buy(self, depth, old_order=False, amount=False, print_info=1):
-        info = self.get_trade_info(depth, 'buy', amount)
+        info = self.get_trade_info(depth, 'buy', amount, old_order)
         if not info:
             return False
         api_resp = await self.trade('buy', info)
@@ -232,10 +232,9 @@ class SimpleStrategy(object):
         money_change = self.calc_money(D(self.pair_info['fee']) + fee, amount, price, is_sell)
         return money_change['buy']
 
-    def get_stat(self):
-        return self.order
-
-    async def tick(self, resp, balance=False, connection=False):
+    async def tick(self, resp, pair, balance=False, connection=False):
+        if not pair == self.PAIR:
+            return
         if connection:
             self.connection = connection
         self.depth = resp

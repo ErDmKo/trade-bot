@@ -101,15 +101,14 @@ class VolumeStrategy(ThreadStrategy):
                 )
             )
 
-    def get_new_amount(self, currency, amount, volume, direction, price):
+    def get_new_amount(self, volume, direction, price, old_order):
         '''
-            amount is from new thread
-            volume is from market best offer
+        direction - sell buy
+        volume - market volume
+        price - market price
+        old_order - VolumeThread instanse
         '''
-        if amount:
-            return amount
-
-        amounts = {
+        balance = {
             'sell': D(self.balance[self.currency['sell']]),
             'buy': D(self.balance[self.currency['buy']]) / D(price)
         }
@@ -118,8 +117,9 @@ class VolumeStrategy(ThreadStrategy):
         print('selected - {}'.format(amounts[direction]))
         '''
         new_volume = min([
+            D(D(old_order.get('amount')) * (D(1) + self.MAX_VOLUME)).quantize(self.prec),
             volume,
-            (amounts[direction] * (self.MAX_VOLUME/100)).quantize(self.prec)
+            (balance[direction] * (self.MAX_VOLUME/100)).quantize(self.prec)
         ])
         return max([
             D(self.pair_info['min_amount']),
