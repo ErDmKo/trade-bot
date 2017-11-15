@@ -2,6 +2,30 @@ import { Component, ViewEncapsulation } from '@angular/core';
 import { AppState } from '../app.service';
 import { OrderService } from './order.service';
 
+const ROWS: Array<{
+    title: string,
+    key: string
+    func?: Function
+}> = [{
+    title: 'id',
+    key: 'id'
+}, {
+    title: 'date',
+    key: 'pub_date',
+}, {
+    title: 'direction',
+    key: 'is_sell',
+    func: (val) => val ? 'sell' : 'buy'
+}, {
+    title: 'price',
+    key: 'price'
+}, {
+    title: 'pair',
+    key: 'pair'
+}].map((col) => Object.assign({
+    func: (val) => val
+}, col));
+
 @Component({
     selector: 'order',
     styleUrls: [
@@ -15,6 +39,7 @@ import { OrderService } from './order.service';
 export class OrderComponent {
     private orders: any[];
     errorMessage: string;
+    rows = ROWS;
 
     constructor(
         public appState: AppState,

@@ -12,7 +12,6 @@ interface iLog {
     message: string
 }
 
-
 @Component({
   selector: 'trade-log',
   styleUrls: [

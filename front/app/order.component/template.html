@@ -1,12 +1,20 @@
 <div class="order">
-    <ul>
-        <li (click)="removeOrder(order.id)" *ngFor="let order of orders">
-            <span [innerHtml]="order.pub_date"></span>
-            <span [innerHtml]="order.price"></span>
-            <span [innerHtml]="order.pair"></span>
-            <span [innerHtml]="order.id"></span>
-        </li>
-    </ul>
+    <div class="order__header">
+        Last Orders
+    </div>
+    <table class="order__list">
+        <tr>
+            <td *ngFor="let row of rows" [innerHtml]="row.title">
+            </td>
+        </tr>
+        <tr 
+            (click)="removeOrder(order.id)"
+            class="order__item"
+            *ngFor="let order of orders">
+                <td *ngFor="let col of rows" [innerHtml]="col.func(order[col.key])">
+                </td>
+        </tr>
+    </table>
     <button (click)="onOrder()">
         Order
     </button>
