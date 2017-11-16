@@ -2,14 +2,10 @@
     <div class="main__head">
         <balance></balance>
     </div>
-    <trade-log></trade-log>
-    <div class="main__cols">
-        <div class="main__coll">
-            <order-book></order-book>
-        </div>
-        <div class="main__coll">
-            <pair></pair>
-        </div>
-    </div>
-    <order></order>
+    <nav>
+        <a routerLink="/order">Orders</a>
+        <a routerLink="/log">Log</a>
+        <a routerLink="/stat">Stat</a>
+    </nav>
+    <router-outlet></router-outlet>
 </div>

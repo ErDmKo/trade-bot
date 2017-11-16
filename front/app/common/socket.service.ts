@@ -4,15 +4,19 @@ import { Response } from '@angular/http';
 import { WebSocketSubject } from 'rxjs/observable/dom/WebSocketSubject'
 
 export abstract class SocketService {
-
+    sub: Subject<String>
     protected abstract wsUrl: string;
 
+    public close() {
+        this.sub.next('close')
+    }
+
     public getWsData (): Observable<any[]> {
-        let sub: Subject<String> = WebSocketSubject.create(
+        this.sub = WebSocketSubject.create(
             this.getRelativeSocket(this.wsUrl)
         )
-        let obser = sub.map(this.extractData);
-        sub.next('connect');
+        let obser = this.sub.map(this.extractData);
+        this.sub.next('connect');
         return obser;
     }
 

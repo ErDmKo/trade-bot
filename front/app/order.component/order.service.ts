@@ -19,6 +19,10 @@ export class OrderService {
             })
             .map(this._toJSON)
     }
+    getById(id: string) {
+        return this.http.get(`${this.dataUrl}/${id}`)
+            .map(this._toJSONone)
+    }
     getList() {
         return this.http.get(this.dataUrl)
             .map(this._toJSON)
@@ -30,6 +34,13 @@ export class OrderService {
         }), {
             headers: this.headers
         }).map(this._toJSON)
+    }
+    _toJSONone(res: Response) {
+        if (res instanceof Response) {
+            return res.json();
+        } else {
+            return res;
+        }
     }
     _toJSON(res: Response | Object) {
         let body: {

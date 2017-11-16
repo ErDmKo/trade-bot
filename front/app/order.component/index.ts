@@ -1,4 +1,4 @@
-import { Component, ViewEncapsulation } from '@angular/core';
+import { Component } from '@angular/core';
 import { AppState } from '../app.service';
 import { OrderService } from './order.service';
 
@@ -22,6 +22,10 @@ const ROWS: Array<{
 }, {
     title: 'pair',
     key: 'pair'
+}, {
+    title: 'parent',
+    key: 'extra',
+    func: val => val.parent
 }].map((col) => Object.assign({
     func: (val) => val
 }, col));

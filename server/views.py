@@ -26,16 +26,31 @@ async def delete_orders(request):
             'orders': [dict(q) for q in orders]
         }, dumps = dumps)
 
+async def order_info(request):
+    async with request.app['db'].acquire() as conn:
+        cursor = await conn.execute(db.order
+                .select()
+                .where(db.order.c.id == request.match_info['id'])
+                .order_by(db.order.c.pub_date.desc())
+                .limit(30)
+            )
+        orders = await cursor.fetchall()
+        orders = [dict(q) for q in orders]
+        return web.json_response(orders[0], dumps=dumps)
+
 async def get_orders(request):
     async with request.app['db'].acquire() as conn:
-        cursor = await conn.execute(db.order.select().limit(10))
+        cursor = await conn.execute(db.order
+                .select()
+                .order_by(db.order.c.pub_date.desc())
+                .limit(30)
+            )
         orders = await cursor.fetchall()
         return web.json_response({
             'orders': [dict(q) for q in orders]
         }, dumps = dumps)
     
 async def order(request):
-
     data = await request.json()
     async with request.app['db'].acquire() as conn:
         await db.add_order(conn, data['price'], data['pair'])
