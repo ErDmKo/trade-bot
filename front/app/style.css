@@ -4,7 +4,11 @@
         color: #fff;
         background: #000;
     }
-    &__cols {
-        display: flex;
+    &__nav {
+        margin: 30px 0;
+    }
+    &__item {
+        padding: 5px;
+        text-decoration: none;
     }
 }

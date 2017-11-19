@@ -1,3 +1,17 @@
-<div class="order-details">
-    {{ order }}
+<div class="order-details" *ngIf="order">
+    <div class="order-details__header">Order {{ order.id }}</div>
+    <div class="order-details__base-info">
+        <div class="order-details__pair">Pair {{ order.pair }}</div>
+        <div class="order-details__price">Price {{ order.price }}</div>
+        <div class="order-details__direction">Direction {{ order.is_sell ? 'sell' : 'buy' }}</div>
+        <div class="order-details__amount">Amount {{ order.amount }}</div>
+    </div>
+    <div class="order-details__base-extra" *ngIf="order.extra">
+        <a 
+            *ngIf="order.extra.parent"
+            routerLink="/order/{{ order.extra.parent }}"
+            class="order-details__parent"
+        >Parent {{ order.extra.parent }}</a>
+        <div class="order-details__exceed">Is exeed {{ order.extra.is_exceed }}</div>
+    </div>
 </div>

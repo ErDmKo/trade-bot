@@ -2,11 +2,13 @@ import { Component } from '@angular/core';
 import { AppState } from '../app.service';
 import { OrderService } from './order.service';
 
-const ROWS: Array<{
+interface Col {
     title: string,
     key: string
     func?: Function
-}> = [{
+}
+
+const ROWS: Array<Col> = [{
     title: 'id',
     key: 'id'
 }, {
@@ -44,6 +46,10 @@ export class OrderComponent {
     private orders: any[];
     errorMessage: string;
     rows = ROWS;
+
+    isLink(col: Col) {
+        return ['id', 'extra'].includes(col.key);
+    }
 
     constructor(
         public appState: AppState,

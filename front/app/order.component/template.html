@@ -11,8 +11,11 @@
             class="order__item"
             *ngFor="let order of orders">
                 <td *ngFor="let col of rows" >
-                    <a *ngIf="col.key == 'id'" [innerHtml]="col.func(order[col.key])" routerLink="/order/{{ order[col.key]}}"></a>
-                    <span *ngIf="col.key != 'id'" [innerHtml]="col.func(order[col.key])"></span>
+                    <a 
+                        *ngIf="isLink(col)"
+                        [innerHtml]="col.func(order[col.key])" 
+                        routerLink="/order/{{ order[col.key]}}"></a>
+                    <span *ngIf="!isLink(col)" [innerHtml]="col.func(order[col.key])"></span>
                 </td>
         </tr>
     </table>
