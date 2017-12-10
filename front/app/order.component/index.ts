@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { AppState } from '../app.service';
 import { OrderService } from './order.service';
+import { ActivatedRoute, Params } from '@angular/router';
 
 interface Col {
     title: string,
@@ -68,6 +69,8 @@ export class OrderComponent {
     rows = ROWS;
     pairs = PAIRS;
     selectedPair: Pair = PAIRS[0];
+    @Input() parent: number;
+
 
     isLink(col: Col) {
         return ['id', 'extra'].includes(col.key);
@@ -75,7 +78,8 @@ export class OrderComponent {
 
     constructor(
         public appState: AppState,
-        private orderService: OrderService
+        private orderService: OrderService,
+        private route: ActivatedRoute
     ) {
     }
     removeOrder(id) {
@@ -87,19 +91,25 @@ export class OrderComponent {
             )
     }
     ngOnInit () {
-        this.orderService
-            .getList()
-            .subscribe(
-                info => this.orders = info.orders,
-                error => this.errorMessage = <any>error
-            );
+        this.route.params.forEach((params: Params) => {
+            this.orderService
+                .getList({
+                    parent: params.id
+                })
+                .subscribe(
+                    info => this.orders = info.orders,
+                    error => this.errorMessage = <any>error
+                );
+        })
     }
     applyFilter(newVal) {
         this.selectedPair = newVal;
         this.orderService
-            .getList(newVal.id && {
-                pair: newVal.title
-            })
+            .getList(Object.assign({
+                parent: this.parent
+            }, newVal.id && {
+                pair: newVal.title,
+            }))
             .subscribe(
                 info => this.orders = info.orders,
                 error => this.errorMessage = <any>error

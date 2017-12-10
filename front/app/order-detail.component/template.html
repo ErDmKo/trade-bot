@@ -14,4 +14,5 @@
         >Parent {{ order.extra.parent }}</a>
         <div class="order-details__exceed">Is exeed {{ order.extra.is_exceed }}</div>
     </div>
+    <order [parent] = "order.id"></order>
 </div>

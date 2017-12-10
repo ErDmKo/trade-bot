@@ -41,14 +41,17 @@ async def order_info(request):
 
 async def get_orders(request):
     filterInfo = request.GET
-    args = True
+    args = []
     if filterInfo.get('pair'):
-       args = db.order.c.pair == filterInfo.get('pair')
+        args.append(db.order.c.pair == filterInfo.get('pair'))
+
+    if filterInfo.get('parent'):
+        args.append(db.order.c.extra['parent'].astext == filterInfo.get('parent'))
 
     async with request.app['db'].acquire() as conn:
         cursor = await conn.execute(db.order
                 .select()
-                .where(args)
+                .where(sa.sql.and_(*args))
                 .order_by(db.order.c.pub_date.desc())
                 .limit(30)
             )
