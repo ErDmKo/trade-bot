@@ -19,7 +19,7 @@ class SimpleStrategy(object):
     @classmethod
     async def create(
             cls,
-            connection,
+            engine,
             tradeApi,
             pubApi,
             is_demo=False,
@@ -37,7 +37,8 @@ class SimpleStrategy(object):
         self.log = log
         self.api = tradeApi
         self.pubApi = pubApi
-        self.connection = connection
+        self.engine = engine;
+        self.connection = await engine.acquire()
         self.prec = D(10) ** -6
         currency = self.PAIR.split('_')
         self.currency = {

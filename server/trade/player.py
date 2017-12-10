@@ -23,22 +23,22 @@ async def load_strategy(app, strategy_name):
             await asyncio.sleep(0.1)
             continue
 
-        async with engine.acquire() as conn:
-            tradeApi = app['privapi']
-            pubApi = PublicAPIv3(*MultiplePairs.PAIRS)
-            module = __import__('server.trade.{}'.format(
-                strategy_name
-            ), fromlist=[strategy_name])
-            logger.info(strategy_name)
-            app['strategy'] = await MultiplePairs.create(
-                conn,
-                tradeApi,
-                pubApi,
-                pair_list = MultiplePairs.PAIRS,
-                strategy = getattr(module, strategy_name),
-                is_demo = False,
-                log = app['socket_channels']['log']
-            )
+        tradeApi = app['privapi']
+        pubApi = PublicAPIv3(*MultiplePairs.PAIRS)
+        module = __import__('server.trade.{}'.format(
+            strategy_name
+        ), fromlist=[strategy_name])
+        logger.info(strategy_name)
+
+        app['strategy'] = await MultiplePairs.create(
+            engine,
+            tradeApi,
+            pubApi,
+            pair_list = MultiplePairs.PAIRS,
+            strategy = getattr(module, strategy_name),
+            is_demo = False,
+            log = app['socket_channels']['log']
+        )
         break
 
 async def on_shutdown(app):
@@ -101,7 +101,7 @@ async def main_test(
             'pair_list': MultiplePairs.PAIRS
         }) 
         player = await strategy.create(
-            conn,
+            engine,
             tradeApi,
             pubApi,
             **constructor

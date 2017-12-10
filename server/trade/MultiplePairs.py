@@ -16,7 +16,7 @@ class MultiplePairs(object):
 
     @classmethod
     async def create(cls,
-        connection,
+        engine,
         tradeApi,
         pubApi,
         strategy=False,
@@ -33,7 +33,7 @@ class MultiplePairs(object):
         self.is_demo = is_demo
         for pair in pair_list:
             self.STORE[pair] = await self.STRATEGY.create(
-                connection,
+                engine,
                 tradeApi,
                 pubApi,
                 is_demo = is_demo,

@@ -202,6 +202,8 @@ class ThreadStrategy(SimpleStrategy):
     async def tick(self, resp, pair, balance=False, connection=False):
         if not pair == self.PAIR:
             return
+        await self.connection.close()
+        self.connection = await self.engine.acquire()
         thresh_hold = self.get_threshhold(resp)
         self.depth = resp
         await self.get_order()
