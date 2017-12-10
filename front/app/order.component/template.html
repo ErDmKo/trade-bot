@@ -1,6 +1,11 @@
 <div class="order">
     <div class="order__header">
-        Last Orders
+        {{ selectedPair.title }} Last Orders
+        <select [(ngModel)]="selectedPair" (ngModelChange)="applyFilter($event)">
+            <option *ngFor="let pair of pairs" [ngValue]="pair">
+                {{ pair.title }}
+            </option>
+        </select>
     </div>
     <table class="order__list">
         <tr>

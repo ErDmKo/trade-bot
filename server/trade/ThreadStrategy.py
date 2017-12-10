@@ -180,9 +180,9 @@ class ThreadStrategy(SimpleStrategy):
         order = False
         self.print('init {}'.format(self.PAIR))
         for currency, amount in self.balance.items():
-            if amount > 0 and currency in self.directions:
-                if not direction:
-                    direction = self.directions[currency]
+            if not direction:
+                direction = self.directions.get(currency)
+            if currency in self.directions and amount > 0:
                 if self.currency[direction] == currency:
                     self.print('Try to start new thread {}'.format(direction))
                     order = await getattr(self, direction)(

@@ -1,4 +1,5 @@
 import aiohttp_jinja2
+import sqlalchemy as sa
 import asyncio
 import aiohttp
 from aiohttp import web
@@ -39,9 +40,15 @@ async def order_info(request):
         return web.json_response(orders[0], dumps=dumps)
 
 async def get_orders(request):
+    filterInfo = request.GET
+    args = True
+    if filterInfo.get('pair'):
+       args = db.order.c.pair == filterInfo.get('pair')
+
     async with request.app['db'].acquire() as conn:
         cursor = await conn.execute(db.order
                 .select()
+                .where(args)
                 .order_by(db.order.c.pub_date.desc())
                 .limit(30)
             )

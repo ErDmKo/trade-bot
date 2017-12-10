@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Http, Response, Headers, URLSearchParams } from '@angular/http';
+import { Http, RequestOptionsArgs, Response, Headers, URLSearchParams } from '@angular/http';
 
 @Injectable()
 export class OrderService {
@@ -23,8 +23,9 @@ export class OrderService {
         return this.http.get(`${this.dataUrl}/${id}`)
             .map(this._toJSONone)
     }
-    getList() {
-        return this.http.get(this.dataUrl)
+    getList(params = {}) {
+        const args: RequestOptionsArgs = { params }
+        return this.http.get(this.dataUrl, args)
             .map(this._toJSON)
     }
     onOrder(price, pair) {

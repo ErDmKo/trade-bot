@@ -17,8 +17,19 @@ class SimpleStrategy(object):
         return cls()
 
     @classmethod
-    async def create(cls, connection, tradeApi, pubApi, is_demo=False, log=False, pair_list=False):
+    async def create(
+            cls,
+            connection,
+            tradeApi,
+            pubApi,
+            is_demo=False,
+            log=False,
+            pair_list=False,
+            fee = False
+        ):
         self = cls.init_self()
+        if fee:
+            self.FEE = D(fee)
         if pair_list:
             self.PAIR = pair_list[0]
             self.PAIRS = self.PAIR,
@@ -169,11 +180,11 @@ class SimpleStrategy(object):
         info_amount = amount if amount else self.get_new_amount(D(volume), direction, price, old_order)
         money = info_amount if is_sell else D(price) * info_amount
         if self.balance[currency] < money:
-            self.print('{} Low balance {} {} need more {} '.format(
+            self.print('{} Low balance {} need more {} {}'.format(
                 self.PAIR,
                 self.balance[currency],
+                (money - D(self.balance[currency])),
                 currency,
-                (money - D(self.balance[currency]))
                 )
             )
             return 

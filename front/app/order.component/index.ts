@@ -7,6 +7,23 @@ interface Col {
     key: string
     func?: Function
 }
+interface Pair {
+    title: string,
+    id: number
+}
+const PAIRS: Array<Pair> = [{
+    id: null,
+    title: 'All'
+}, {
+    id: 1,
+    title: 'btc_usd'
+}, {
+    id: 2,
+    title: 'eth_usd'
+}, {
+    id: 3,
+    title: 'eth_btc'
+}]
 
 const ROWS: Array<Col> = [{
     title: 'id',
@@ -14,6 +31,9 @@ const ROWS: Array<Col> = [{
 }, {
     title: 'date',
     key: 'pub_date',
+}, {
+    title: 'amount',
+    key: 'amount',
 }, {
     title: 'direction',
     key: 'is_sell',
@@ -46,6 +66,8 @@ export class OrderComponent {
     private orders: any[];
     errorMessage: string;
     rows = ROWS;
+    pairs = PAIRS;
+    selectedPair: Pair = PAIRS[0];
 
     isLink(col: Col) {
         return ['id', 'extra'].includes(col.key);
@@ -67,6 +89,17 @@ export class OrderComponent {
     ngOnInit () {
         this.orderService
             .getList()
+            .subscribe(
+                info => this.orders = info.orders,
+                error => this.errorMessage = <any>error
+            );
+    }
+    applyFilter(newVal) {
+        this.selectedPair = newVal;
+        this.orderService
+            .getList(newVal.id && {
+                pair: newVal.title
+            })
             .subscribe(
                 info => this.orders = info.orders,
                 error => this.errorMessage = <any>error

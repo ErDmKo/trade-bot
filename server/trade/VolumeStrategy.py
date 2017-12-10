@@ -57,7 +57,6 @@ class VolumeThread(OrderThread):
         )
 
 class VolumeStrategy(ThreadStrategy):
-
     LIMIT = 20000
     ORDER_CLASS = VolumeThread
     MAX_VOLUME = D(5) # % form balance less precent is hight accuracy and low speed
