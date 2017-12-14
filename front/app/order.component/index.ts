@@ -2,6 +2,7 @@ import { Component, Input } from '@angular/core';
 import { AppState } from '../app.service';
 import { OrderService } from './order.service';
 import { ActivatedRoute, Params } from '@angular/router';
+import * as moment from 'moment';
 
 interface Col {
     title: string,
@@ -28,10 +29,11 @@ const PAIRS: Array<Pair> = [{
 
 const ROWS: Array<Col> = [{
     title: 'id',
-    key: 'id'
+    key: 'id',
 }, {
     title: 'date',
     key: 'pub_date',
+    func: (val) => moment(val).fromNow(true)
 }, {
     title: 'amount',
     key: 'amount',
