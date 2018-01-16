@@ -12,7 +12,6 @@ async def index(request):
     
 
 async def pairs(request):
-    print(request.headers)
     info = await request.app['pubapi'].call('ticker')
     return web.json_response(info, dumps = dumps)
 
@@ -41,6 +40,8 @@ async def order_info(request):
 
 async def get_orders(request):
     filterInfo = request.GET
+    limit = 30
+    offset = 0
     args = []
     if filterInfo.get('pair'):
         args.append(db.order.c.pair == filterInfo.get('pair'))
@@ -48,12 +49,25 @@ async def get_orders(request):
     if filterInfo.get('parent'):
         args.append(db.order.c.extra['parent'].astext == filterInfo.get('parent'))
 
+    if filterInfo.get('limit'):
+        try:
+            limit = int(filterInfo.get('limit'))
+        except ValueError as e:
+            pass
+
+    if filterInfo.get('offset'):
+        try:
+            offset = int(filterInfo.get('offset'))
+        except ValueError as e:
+            pass
+
     async with request.app['db'].acquire() as conn:
         cursor = await conn.execute(db.order
                 .select()
                 .where(sa.sql.and_(*args))
                 .order_by(db.order.c.pub_date.desc())
-                .limit(30)
+                .limit(limit)
+                .offset(offset)
             )
         orders = await cursor.fetchall()
         return web.json_response({
