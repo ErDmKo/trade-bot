@@ -1,3 +1,4 @@
+import asyncio
 import json, logging
 import sqlalchemy as sa
 from decimal import Decimal as D
@@ -59,9 +60,9 @@ class SimpleStrategy(object):
         message = ' '.join(args)
         self.logger.info(message)
         if self.log:
-            self.log.broadcast({
+            asyncio.ensure_future(self.log.broadcast({
                 'message': message
-            })
+            }))
 
     def get_order_table(self):
         return getattr(db, self.order_table)

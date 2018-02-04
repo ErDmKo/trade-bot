@@ -26,7 +26,7 @@ class BList(list):
                     self.remove(waiter)
                 else:
                     print('close by socker error')
-                    # self.remove(waiter)
+                    self.remove(waiter)
                     raise e
 
 async def handle_socket(ws, api=False, method=False):

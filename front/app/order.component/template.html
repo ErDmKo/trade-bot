@@ -8,7 +8,9 @@
         </select>
     </div>
     <table class="order__list">
-        <tr>
+        <tr 
+            *ngIf="orders && orders.length"
+            >
             <td *ngFor="let row of rows" [innerHtml]="row.title">
             </td>
         </tr>
@@ -24,7 +26,13 @@
                 </td>
         </tr>
     </table>
-    <!--button (click)="onOrder()">
-        Order
-    </button-->
+    <div *ngIf="pages && pages.length > 1" class="order__pages">
+        <div 
+            [ngClass] = "{'order__page-selected': page.selected}"
+            *ngFor="let page of pages"
+            class="order__page"
+            [innerHtml]="page.no"
+            (click)="selectPage(page)">
+        </div>
+    </div>
 </div>

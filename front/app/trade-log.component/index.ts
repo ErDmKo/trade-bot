@@ -35,7 +35,7 @@ interface iLog {
             animate('0.2s ease-in')
           ]),
           transition('* => void', [
-            animate('0.2s 10 ease-out', style({
+            animate('0.2s ease-out', style({
               opacity: 0,
               transform: 'translateX(100%)'
             }))

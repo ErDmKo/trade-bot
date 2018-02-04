@@ -7,6 +7,20 @@
         margin: 0;
         padding: 0;
     }
+    &__page {
+        display: inline-block;
+        color: blue;
+        margin: 0 5px;
+        &-selected {
+            color: black;
+            &:hover {
+                cursor: default;
+            }
+        }
+        &:hover {
+            cursor: pointer;
+        }
+    }
     &__item {
         list-style: none;
     }

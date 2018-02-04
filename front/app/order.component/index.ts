@@ -13,6 +13,10 @@ interface Pair {
     title: string,
     id: number
 }
+interface Page {
+    no: number,
+    selected: boolean
+}
 const PAIRS: Array<Pair> = [{
     id: null,
     title: 'All'
@@ -68,8 +72,11 @@ const ROWS: Array<Col> = [{
 export class OrderComponent {
     private orders: any[];
     errorMessage: string;
+    pages: Page[];
     rows = ROWS;
     pairs = PAIRS;
+    pageSize = 30;
+    page = 0;
     selectedPair: Pair = PAIRS[0];
     @Input() parent: number;
 
@@ -95,33 +102,53 @@ export class OrderComponent {
     ngOnInit () {
         this.route.params.forEach((params: Params) => {
             this.orderService
-                .getList({
-                    parent: params.id
-                })
+                .getList(this.getListParams({
+                    parent: params.id,
+                }))
                 .subscribe(
-                    info => this.orders = info.orders,
+                    info => {
+                        this.page = 0;
+                        this.setState(info);
+                    },
                     error => this.errorMessage = <any>error
                 );
         })
     }
+    setState(info) {
+        this.orders = info.orders;
+        this.pages = Array.from(Array(Math.ceil(info.meta.total / this.pageSize)).keys())
+            .map(i => ({
+                no: i + 1,
+                selected: i == this.page
+            }));
+    }
+    getListParams(base?) {
+        return {
+            ...(base || {}),
+            parent: this.parent,
+            offset: this.pageSize * this.page,
+            limit: this.pageSize
+        }
+    }
     applyFilter(newVal) {
         this.selectedPair = newVal;
+        this.page = 0;
         this.orderService
-            .getList(Object.assign({
-                parent: this.parent
-            }, newVal.id && {
+            .getList(Object.assign(this.getListParams(), newVal.id && {
                 pair: newVal.title,
             }))
             .subscribe(
-                info => this.orders = info.orders,
+                info => this.setState(info),
                 error => this.errorMessage = <any>error
             );
     }
-    onOrder() {
+    selectPage(page) {
+        this.page = page.no - 1;
         this.orderService
-            .onOrder(10, 'btc_usd')
-            .subscribe(info => {
-                this.orders = info.orders;
-            })
+            .getList(this.getListParams())
+            .subscribe(
+                info => this.setState(info),
+                error => this.errorMessage = <any>error
+            );
     }
 }

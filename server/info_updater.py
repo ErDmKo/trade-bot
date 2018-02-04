@@ -43,6 +43,10 @@ async def update_info(app):
 
         if app.get('db'):
             async with app['db'].acquire() as conn:
+                await conn.execute(history.delete().where(
+                    history.c.pub_date < 
+                        datetime.datetime.now() - datetime.timedelta(days=90)
+                ))
                 for pair, info in depth_info.items():
                     result = await conn.execute(
                         history.insert().values(

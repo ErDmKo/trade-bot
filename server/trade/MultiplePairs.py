@@ -11,10 +11,6 @@ class MultiplePairs(object):
     logger = logging.getLogger(__name__)
 
     @classmethod
-    def init_self(cls):
-        return cls()
-
-    @classmethod
     async def create(cls,
         engine,
         tradeApi,
@@ -25,7 +21,7 @@ class MultiplePairs(object):
         fee = False,
         pair_list=[]):
 
-        self = cls.init_self()
+        self = cls()
 
         if strategy:
             self.strategy = strategy
