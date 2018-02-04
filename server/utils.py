@@ -8,8 +8,16 @@ from datetime import date as dateFormat
 
 class BList(list):
 
-    def broadcast(self, message):
+    async def broadcast(self, message):
         for waiter in self:
+            exception = waiter.exception()
+            if exception:
+                print(
+                    'close because socker error {}'
+                        .format(exception)
+                )
+                self.remove(waiter)
+                continue
             try:
                 waiter.send_json(message, dumps=dumps)
             except RuntimeError as e:

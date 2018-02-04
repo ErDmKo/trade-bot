@@ -70,8 +70,17 @@ async def get_orders(request):
                 .offset(offset)
             )
         orders = await cursor.fetchall()
+        cursor = await conn.execute(
+            db.order.select()
+                .with_only_columns([
+                    sa.sql.func.count(db.order.c.id).label('total')
+                ])
+                .where(sa.sql.and_(*args))
+            )
+        meta = await cursor.fetchall()
         return web.json_response({
-            'orders': [dict(q) for q in orders]
+            'orders': [dict(q) for q in orders],
+            'meta':  dict(meta[0])
         }, dumps = dumps)
     
 async def order(request):

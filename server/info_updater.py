@@ -37,9 +37,9 @@ async def update_info(app):
                     print('Error')
                     print_exception()
 
-        channels['balance_socket'].broadcast(balans_info)
-        channels['depth_socket'].broadcast(depth_info)
-        channels['pair_socket'].broadcast(pair_info)
+        await channels['balance_socket'].broadcast(balans_info)
+        await channels['depth_socket'].broadcast(depth_info)
+        await channels['pair_socket'].broadcast(pair_info)
 
         if app.get('db'):
             async with app['db'].acquire() as conn:
