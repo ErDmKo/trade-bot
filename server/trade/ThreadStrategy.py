@@ -220,6 +220,7 @@ class ThreadStrategy(SimpleStrategy):
 
                 if old_order and old_order.get('price') == order.get('price'):
                     await old_order.merge(order)
+                    break
 
                 # spended money
                 old_money = self.get_best_price(

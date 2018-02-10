@@ -11,7 +11,26 @@ class VolumeThread(OrderThread):
     logger = logging.getLogger(__name__)
 
     async def merge(self, order):
-        return await self.update_by_id(self.order.id,
+        base_amount = (D(order.get('amount')) + D(self.get('amount'))).quantize(self.prec)
+        self.logger.info('{} id amount {} closed by merge with {} amount {} new amount {} pair {}'.format(
+            self.get('id'),
+            self.get('amount'),
+            order.get('id'),
+            order.get('amount'),
+            base_amount,
+            self.get('pair')
+        ))
+        new_amount = (D(self.order.extra['amount']) + D(order.order.extra['amount'])).quantize(self.prec)
+        await self.update_by_id(order.get('id'),
+            amount = base_amount,
+            extra = sa.cast(
+                sa.cast(func.coalesce(self.table.c.extra, '{}'), JSONB)
+                .concat(func.jsonb_build_object(
+                    'amount', str(new_amount)
+                )), JSONB
+            )
+        )
+        return await self.update_by_id(self.get('id'),
             extra = sa.cast(
                 sa.cast(func.coalesce(self.table.c.extra, '{}'), JSONB)
                 .concat(func.jsonb_build_object(
@@ -116,9 +135,9 @@ class VolumeStrategy(ThreadStrategy):
         print('selected - {}'.format(amounts[direction]))
         '''
         new_volume = min([
-            D(D(old_order.get('amount')) * (D(1) + self.MAX_VOLUME)).quantize(self.prec),
+            # D(D(old_order.get('amount')) * (D(1) + self.MAX_VOLUME)).quantize(self.prec),
             volume,
-            (balance[direction] * (self.MAX_VOLUME/100)).quantize(self.prec)
+            # (balance[direction] * (self.MAX_VOLUME/100)).quantize(self.prec)
         ])
         return max([
             D(self.pair_info['min_amount']),

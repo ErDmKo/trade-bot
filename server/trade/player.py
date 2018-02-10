@@ -13,8 +13,8 @@ from server import utils
 from ..btcelib import TradeAPIv1, PublicAPIv3
 from .MultiplePairs import MultiplePairs
 
-START_TIME = '2017-12-02 00:00'
-END_TIME = '2017-12-02 23:59'
+START_TIME = '2018-02-08 00:00'
+END_TIME = '2018-02-08 23:59'
 
 async def load_strategy(app, strategy_name):
     while True:
@@ -114,10 +114,10 @@ async def main_test(
         balance = 'Nothing has founded' 
         async for tick in cursor:
             balance = getattr(player, 'balance', {
-                'usd': D(200),
+                'usd': D(2000),
                 'btc': D(0),
                 'rur': D(0),
-                'eth': D(10)
+                'eth': D(100)
             })
             depth = json.loads(tick.resp)
             depth['pub_date'] = tick.pub_date
