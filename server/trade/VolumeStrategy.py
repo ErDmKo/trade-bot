@@ -135,7 +135,7 @@ class VolumeStrategy(ThreadStrategy):
         print('selected - {}'.format(amounts[direction]))
         '''
         new_volume = min([
-            # D(D(old_order.get('amount')) * (D(1) + self.MAX_VOLUME)).quantize(self.prec),
+            D(old_order.get('amount')), # * (D(1) + self.MAX_VOLUME)).quantize(self.prec),
             volume,
             # (balance[direction] * (self.MAX_VOLUME/100)).quantize(self.prec)
         ])

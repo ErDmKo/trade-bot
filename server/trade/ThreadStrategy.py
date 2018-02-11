@@ -218,7 +218,9 @@ class ThreadStrategy(SimpleStrategy):
             old_order = False
             for order in self.orders:
 
-                if old_order and old_order.get('price') == order.get('price'):
+                if old_order \
+                    and old_order.get('price') == order.get('price')  \
+                    and old_order.get('is_sell')  == order.get('is_sell'):
                     await old_order.merge(order)
                     break
 
