@@ -49,6 +49,24 @@ async def get_orders(request):
     if filterInfo.get('parent'):
         args.append(db.order.c.extra['parent'].astext == filterInfo.get('parent'))
 
+    if filterInfo.get('is_sell'):
+        is_sell = None
+        try:
+            is_sell = int(filterInfo.get('is_sell'))
+        except:
+            pass
+        if is_sell != None:
+            args.append(db.order.c.is_sell == (is_sell == 1))
+
+    if filterInfo.get('is_exceed'):
+        exceed = None
+        try:
+            exceed = int(filterInfo.get('is_exceed'))
+        except:
+            pass
+        if exceed != None:
+            args.append(db.order.c.extra['is_exceed'].astext == ('0' if not exceed else '1'))
+
     if filterInfo.get('limit'):
         try:
             limit = int(filterInfo.get('limit'))

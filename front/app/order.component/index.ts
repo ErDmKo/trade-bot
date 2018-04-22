@@ -9,17 +9,49 @@ interface Col {
     key: string
     func?: Function
 }
-interface Pair {
-    title: string,
+interface Filtred {
+    title: string
+    value?: string
     id: number
+}
+interface Pair extends Filtred {
 }
 interface Page {
     no: number,
     selected: boolean
 }
+interface ExceedState extends Filtred {
+}
+interface Filter {
+    [key: string]: Filtred
+}
+const IS_SELL: Array<Filtred> = [{
+    id: null,
+    title: 'Buy and Sell'
+}, {
+    id: 1,
+    value: '1',
+    title: 'Sell'
+}, {
+    id: 2,
+    value: '0',
+    title: 'Buy'
+}]
+const EXCEED: Array<ExceedState> = [{
+    id: null,
+    title: 'Exceeded and Not'
+}, {
+    id: 1,
+    value: '1',
+    title: 'Exceeded'
+}, {
+    id: 2,
+    value: '0',
+    title: 'Not exceeded'
+}]
 const PAIRS: Array<Pair> = [{
     id: null,
-    title: 'All'
+    title: 'All pairs'
 }, {
     id: 1,
     title: 'btc_usd'
@@ -74,10 +106,18 @@ export class OrderComponent {
     errorMessage: string;
     pages: Page[];
     rows = ROWS;
-    pairs = PAIRS;
     pageSize = 30;
     page = 0;
-    selectedPair: Pair = PAIRS[0];
+    //shit code
+    filter: Filter = {
+        pair: PAIRS[0],
+        is_exceed: EXCEED[0],
+        is_sell: IS_SELL[0]
+    };
+    pairs = PAIRS;
+    exceededList = EXCEED;
+    sellList = IS_SELL;
+    // ----
     @Input() parent: number;
 
 
@@ -130,13 +170,19 @@ export class OrderComponent {
             limit: this.pageSize
         }
     }
-    applyFilter(newVal) {
-        this.selectedPair = newVal;
+    applyFilter(filter) {
+        this.filter = Object.assign(this.filter, filter);
         this.page = 0;
         this.orderService
-            .getList(Object.assign(this.getListParams(), newVal.id && {
-                pair: newVal.title,
-            }))
+            .getList(Object.assign(this.getListParams(), Object.keys(this.filter)
+               .reduce((resultFilter, key) => {
+                   const info = this.filter[key];
+                   if (info.id !== null ) {
+                       resultFilter[key] = info.value !== undefined ? info.value : info.title
+                   }
+                   return resultFilter
+               }, {} as {[key: string]: string})
+            ))
             .subscribe(
                 info => this.setState(info),
                 error => this.errorMessage = <any>error

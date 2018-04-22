@@ -1,9 +1,23 @@
 <div class="order">
     <div class="order__header">
-        {{ selectedPair.title }} Last <span *ngIf="parent">childs of {{ parent }}</span> Order
-        <select [(ngModel)]="selectedPair" (ngModelChange)="applyFilter($event)">
+        {{ filter.pair.title }} Last <span *ngIf="parent">childs of {{ parent }}</span> Order
+        <select [(ngModel)]="filter.pair" (ngModelChange)="applyFilter({pair: $event})">
             <option *ngFor="let pair of pairs" [ngValue]="pair">
                 {{ pair.title }}
+            </option>
+        </select>
+        <select 
+            [(ngModel)]="filter.is_exceed" 
+            (ngModelChange)="applyFilter({is_exceed: $event})">
+            <option *ngFor="let state of exceededList" [ngValue]="state">
+                {{ state.title }}
+            </option>
+        </select>
+        <select 
+            [(ngModel)]="filter.is_sell" 
+            (ngModelChange)="applyFilter({is_sell: $event})">
+            <option *ngFor="let state of sellList" [ngValue]="state">
+                {{ state.title }}
             </option>
         </select>
     </div>

@@ -8,6 +8,7 @@ from .db import history
 import sys, traceback
 
 logger = logging.getLogger(__name__)
+run_date = datetime.datetime.now()
 
 def print_exception():
     exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -41,12 +42,14 @@ async def update_info(app):
         await channels['depth_socket'].broadcast(depth_info)
         await channels['pair_socket'].broadcast(pair_info)
 
+        now = datetime.datetime.now()
         if app.get('db'):
             async with app['db'].acquire() as conn:
-                await conn.execute(history.delete().where(
-                    history.c.pub_date < 
-                        datetime.datetime.now() - datetime.timedelta(days=90)
-                ))
+                if run_date.date() != now.date():
+                    await conn.execute(history.delete().where(
+                        history.c.pub_date < 
+                            now - datetime.timedelta(days=90)
+                    ))
                 for pair, info in depth_info.items():
                     result = await conn.execute(
                         history.insert().values(
