@@ -170,9 +170,11 @@ export class OrderComponent {
             limit: this.pageSize
         }
     }
-    applyFilter(filter) {
+    applyFilter(filter = {}) {
         this.filter = Object.assign(this.filter, filter);
-        this.page = 0;
+        if (Object.keys(filter).length) {
+            this.page = 0;
+        }
         this.orderService
             .getList(Object.assign(this.getListParams(), Object.keys(this.filter)
                .reduce((resultFilter, key) => {
@@ -190,11 +192,6 @@ export class OrderComponent {
     }
     selectPage(page) {
         this.page = page.no - 1;
-        this.orderService
-            .getList(this.getListParams())
-            .subscribe(
-                info => this.setState(info),
-                error => this.errorMessage = <any>error
-            );
+        this.applyFilter();
     }
 }
