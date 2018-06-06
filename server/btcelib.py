@@ -3,6 +3,9 @@
 # module: btcelib.py <http://pastebin.com/kABSEyYB>
 # import: simplejson <https://pypi.python.org/pypi/simplejson>
 
+import logging
+logger = logging.getLogger(__name__)
+
 """BTC-E Public API v3 and Trade API v1
 
 The MIT License (MIT) <http://opensource.org/licenses/MIT>.
@@ -249,6 +252,7 @@ class BTCEConnection(object):
         else:
             if 'error' in data:
                 # BTC-E API standard errors
+                logging.info(params)
                 raise APIError(str(data['error']))
         return data
 

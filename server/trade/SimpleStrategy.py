@@ -138,7 +138,7 @@ class SimpleStrategy(object):
             pair=info['pair'],
             type=direction,
             rate=info['price'],
-            amount = info['amount']
+            amount = D(info['amount']).quantize(self.prec)
         )
         if D(api_resp['received']) < info['amount']:
             self.print('CancelOrder {}'.format(

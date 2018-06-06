@@ -135,7 +135,7 @@ export class OrderComponent {
         this.orderService
             .removeOrder(id)
             .subscribe(
-                info => this.orders = info.orders,
+                (info: any) => this.orders = info.orders,
                 error => this.errorMessage = <any>error
             )
     }

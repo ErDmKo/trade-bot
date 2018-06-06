@@ -3,6 +3,8 @@
     <div class="order-details__base-info">
         <div class="order-details__pair">Pair {{ order.pair }}</div>
         <div class="order-details__price">Price {{ order.price }}</div>
+        <div class="order-details__date">Date {{ order.pub_date }}</div>
+        <div class="order-details__diff">Date diff {{ order.getDiff() }}</div>
         <div class="order-details__direction">Direction {{ order.is_sell ? 'sell' : 'buy' }}</div>
         <div class="order-details__amount">Amount {{ order.amount }}</div>
     </div>
