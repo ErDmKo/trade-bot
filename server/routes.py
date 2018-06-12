@@ -11,6 +11,7 @@ def setup_routes(app):
     res.add_route('GET', views.order_info)
     app.router.add_post('/api/order', views.order, name='order')
     app.router.add_get('/api/order', views.get_orders, name='get_order')
+    app.router.add_get('/api/history', views.get_history, name='get_history')
     app.router.add_delete('/api/order', views.delete_orders, name='delete_order')
     app.router.add_get('/api/pairs', views.pairs, name='pairs')
 

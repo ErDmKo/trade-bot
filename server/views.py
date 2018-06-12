@@ -2,6 +2,9 @@ import aiohttp_jinja2
 import sqlalchemy as sa
 import asyncio
 import aiohttp
+from sqlalchemy.sql import select
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.dialects.postgresql import JSONB, REAL
 from aiohttp import web
 from .utils import dumps, handle_socket
 from . import db
@@ -37,6 +40,89 @@ async def order_info(request):
         orders = await cursor.fetchall()
         orders = [dict(q) for q in orders]
         return web.json_response(orders[0], dumps=dumps)
+
+async def get_history(request):
+    filterInfo = request.GET
+    limit = 30
+    sampling = 0
+    offset = 0
+    group_by = False;
+    args = []
+
+    if filterInfo.get('from'):
+        args.append(db.history.c.pub_date >= filterInfo.get('from'))
+
+    if filterInfo.get('to'):
+        args.append(db.history.c.pub_date <= filterInfo.get('to'))
+
+    if filterInfo.get('group'):
+        group_by = filterInfo['group']
+
+    if filterInfo.get('limit'):
+        limit = int(filterInfo['limit'])
+        if limit > 100:
+            sampling = min([1, 1000 / limit])
+            args.append(sa.func.random() > sampling)
+
+    if filterInfo.get('pair'):
+        args.append(db.history.c.pair == filterInfo.get('pair'))
+    else:
+        raise Exception('Pair is requried')
+    ''' 
+    select 
+        avg(t.price) as price,
+        date_trunc('minute', t.pub_date) as pub_date
+    from (
+        select 
+            (
+                cast(
+                    cast(resp->>0 as jsonb)->'asks'->0->>0 as real
+                ) + 
+                cast(
+                    cast(resp->>0 as jsonb)->'bids'->0->>0 as real
+                )
+            ) / 2 as price,
+            pub_date 
+        from 
+            history
+        where 
+            pair='eth_btc' 
+        order by 
+            pub_date desc 
+        limit 50 
+    )
+    group by 
+        pub_date
+    order_by
+        pub_date DESC
+    '''
+    query = db.history.c.resp[0].astext.cast(JSONB)['asks'][0][0].astext.cast(REAL)
+    query = query + db.history.c.resp[0].astext.cast(JSONB)['bids'][0][0].astext.cast(REAL)
+    query = query / 2
+    
+    async with request.app['db'].acquire() as conn:
+        query = select([query.label('price'), db.history.c.pub_date]) \
+            .where(sa.sql.and_(*args)) \
+            .order_by(db.history.c.pub_date.desc()) \
+            .limit(limit) \
+            .offset(offset) \
+            .alias('t')
+
+        if group_by:
+            query = select([
+                sa.func.avg(query.c.price).label('price'), 
+                sa.func.date_trunc(group_by, query.c.pub_date).label('pub_date')
+            ]) \
+            .select_from(query) \
+            .group_by(sa.func.date_trunc(group_by, query.c.pub_date)) \
+            .order_by(sa.func.date_trunc(group_by, query.c.pub_date).desc())
+
+        cursor = await conn.execute(query)
+        items = await cursor.fetchall()
+        return web.json_response({
+            'history': [dict(q) for q in items],
+        }, dumps = dumps)
+
 
 async def get_orders(request):
     filterInfo = request.GET
