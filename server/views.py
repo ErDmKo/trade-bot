@@ -44,78 +44,81 @@ async def order_info(request):
 async def get_history(request):
     filterInfo = request.GET
     limit = 30
-    sampling = 0
+    sampling = 100
     offset = 0
     group_by = False;
     args = []
 
-    if filterInfo.get('from'):
-        args.append(db.history.c.pub_date >= filterInfo.get('from'))
-
-    if filterInfo.get('to'):
-        args.append(db.history.c.pub_date <= filterInfo.get('to'))
-
     if filterInfo.get('group'):
         group_by = filterInfo['group']
+        if group_by == 'minute':
+            sampling = 30
+        if group_by == 'hour':
+            sampling = 1 
+        if group_by == 'days':
+            sampling = 0.04
+        if group_by == 'month':
+            sampling = 0.001
 
-    if filterInfo.get('limit'):
-        limit = int(filterInfo['limit'])
-        if limit > 100:
-            sampling = min([1, 1000 / limit])
-            args.append(sa.func.random() > sampling)
+    history = sa.tablesample(db.history, sa.func.system(sampling))
+
+    if filterInfo.get('from'):
+        args.append(history.c.pub_date >= filterInfo.get('from'))
+
+    if filterInfo.get('to'):
+        args.append(history.c.pub_date <= filterInfo.get('to'))
 
     if filterInfo.get('pair'):
-        args.append(db.history.c.pair == filterInfo.get('pair'))
+        args.append(history.c.pair == filterInfo.get('pair'))
     else:
         raise Exception('Pair is requried')
     ''' 
-    select 
-        avg(t.price) as price,
-        date_trunc('minute', t.pub_date) as pub_date
-    from (
-        select 
-            (
-                cast(
-                    cast(resp->>0 as jsonb)->'asks'->0->>0 as real
-                ) + 
-                cast(
-                    cast(resp->>0 as jsonb)->'bids'->0->>0 as real
-                )
-            ) / 2 as price,
-            pub_date 
-        from 
-            history
-        where 
-            pair='eth_btc' 
-        order by 
-            pub_date desc 
-        limit 50 
-    )
-    group by 
-        pub_date
-    order_by
+    SELECT 
+        avg((CAST(((CAST((history_1.resp ->> 0) AS JSONB) -> 'asks'->0) ->> 0) AS REAL) 
+        + CAST(((CAST((history_1.resp ->> 0) AS JSONB) -> 'bids'->0) ->> 0) AS REAL)) 
+        / 2) AS price, 
+        date_trunc('minute', history_1.pub_date) AS pub_date
+    FROM 
+        history AS history_1 TABLESAMPLE system(0.001)
+    WHERE 
+        history_1.pub_date >= '2018-05-11T00:00:00' 
+        AND history_1.pub_date <= '2018-06-12T15:00:00' 
+        AND history_1.pair = 'eth_btc' 
+    GROUP BY 
+        date_trunc('minute', history_1.pub_date) 
+    ORDER BY 
         pub_date DESC
+    LIMIT
+        1000 
+    OFFSET
+        0;
     '''
-    query = db.history.c.resp[0].astext.cast(JSONB)['asks'][0][0].astext.cast(REAL)
-    query = query + db.history.c.resp[0].astext.cast(JSONB)['bids'][0][0].astext.cast(REAL)
+
+    query = history.c.resp[0].astext.cast(JSONB)['asks'][0][0].astext.cast(REAL)
+    query = query + history.c.resp[0].astext.cast(JSONB)['bids'][0][0].astext.cast(REAL)
     query = query / 2
+
+    if (group_by):
+        query = sa.func.avg(query)
     
     async with request.app['db'].acquire() as conn:
-        query = select([query.label('price'), db.history.c.pub_date]) \
+        date = history.c.pub_date
+        collums = [query.label('price')]
+        if group_by:
+            date = sa.func.date_trunc(group_by, history.c.pub_date).label('pub_date')
+            collums += [date, sa.func.count().label('count')]
+
+        query = select(collums) \
             .where(sa.sql.and_(*args)) \
-            .order_by(db.history.c.pub_date.desc()) \
-            .limit(limit) \
-            .offset(offset) \
-            .alias('t')
+            .order_by(date.desc())
 
         if group_by:
-            query = select([
-                sa.func.avg(query.c.price).label('price'), 
-                sa.func.date_trunc(group_by, query.c.pub_date).label('pub_date')
-            ]) \
-            .select_from(query) \
-            .group_by(sa.func.date_trunc(group_by, query.c.pub_date)) \
-            .order_by(sa.func.date_trunc(group_by, query.c.pub_date).desc())
+            query = query \
+                .group_by(date)
+        else:
+            query = query \
+                .limit(limit) \
+                .offset(offset)
 
         cursor = await conn.execute(query)
         items = await cursor.fetchall()

@@ -39,9 +39,9 @@ export class OrderBookComponent {
             this.historyService
                 .getList({
                     pair: 'eth_btc',
-                    limit: 100,
-                    group: 'minute',
-                    from: '2018-05-12T00:00:00',
+                    limit: 1001,
+                    group: 'month',
+                    from: '2018-04-12T00:00:00',
                     to: '2018-06-12T15:00:00'
                 })
                 .subscribe(
