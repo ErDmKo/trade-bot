@@ -1,9 +1,37 @@
-import { Component } from '@angular/core';
+import { Component, ViewChild, ElementRef } from '@angular/core';
 import { OrderBookService } from './order-book.service'
 import { HistoryService } from './history.service'
 import { ActivatedRoute, Params } from '@angular/router';
+import { PAIRS, Filtred } from '../order.component'
+import * as moment from 'moment';
+import * as Plotly from 'plotly.js/lib/core';
+import { Moment, DurationInputArg1, DurationInputArg2 } from 'moment';
 
 import { AppState } from '../app.service';
+
+
+interface Filter {
+    pair: Filtred,
+    group: Filtred,
+    from?: Moment,
+    to?: Moment
+}
+const GROUPS: Array<Filtred> = [{
+    id: 1,    
+    title: 'minute'
+}, {
+    id: 2,
+    title: 'hour'
+}, {
+    id: 3,
+    title: 'day'
+}, {
+    id: 4,
+    title: 'week'
+}, {
+    id: 5,
+    title: 'month'
+}];
 
 @Component({
   selector: 'order-book',
@@ -20,14 +48,61 @@ export class OrderBookComponent {
     private data: any[];
     errorMessage: string;
     private deph: any;
+    private plot: any;
 
+    @ViewChild('chart') el:ElementRef;
+
+    pairs = PAIRS.slice(1);
+    groups = GROUPS;
+
+    filter: Filter = {
+        pair: this.pairs[0],
+        group: GROUPS[0]
+    }
     constructor(
         public appState: AppState,
         private orderBookService: OrderBookService,
         private route: ActivatedRoute,
         private historyService: HistoryService
-    ) {
+    ) {}
+
+    applyFilter(filter = {}) {
+        this.filter = Object.assign(this.filter, filter);
+
+
+        let groupName = 'month';
+        let groupDelta = 2;
+        const selectedIndex = this.groups.map(group => group.id)
+            .indexOf(this.filter.group.id);
+        if (this.groups[selectedIndex + 1]) {
+            groupName = this.groups[selectedIndex + 1].title;
+            groupDelta = 1;
+        }
+
+        this.filter.from = moment().subtract(
+            groupDelta as DurationInputArg1, 
+            groupName as DurationInputArg2
+        ).add(moment().utcOffset(), 'minute');
+        this.filter.to = moment().add(moment().utcOffset(), 'minute');
+
+        this.historyService
+            .getList({
+                pair: this.filter.pair.title,
+                group: this.filter.group.title,
+                from: this.filter.from,
+                to: this.filter.to
+            })
+            .subscribe(
+                info => {
+                    this.deph = info;
+                    if (this.plot) {
+                        Plotly.newPlot.apply(Plotly, this.getPlotlyArgs());
+                    }
+                },
+                error => this.errorMessage = <any>error
+            );
     }
+
     ngOnInit () {
         this.orderBookService
             .getWsData()
@@ -35,21 +110,36 @@ export class OrderBookComponent {
                 data => this.data = data,
                 error => this.errorMessage = <any>error
             );
+
         this.route.params.forEach((params: Params) => {
-            this.historyService
-                .getList({
-                    pair: 'eth_btc',
-                    limit: 1001,
-                    group: 'month',
-                    from: '2018-04-12T00:00:00',
-                    to: '2018-06-12T15:00:00'
-                })
-                .subscribe(
-                    info => {
-                        this.deph = info;
-                    },
-                    error => this.errorMessage = <any>error
-                );
-        })
+            this.applyFilter(params);
+        });
+    }
+    unpack(col) {
+        if (!this.deph) {
+            return;
+        }
+        return this.deph.history.map(r => r[col]);
+    }
+    getPlotlyArgs() {
+        const layout = {
+              title: `Price for 
+                ${this.filter.pair.title} 
+              from ${this.filter.from.toISOString()}
+              to ${this.filter.to.toISOString()}`.replace(/\s\s+/g, ' ')
+        };
+        const data = [{
+            x: this.unpack('pub_date'),
+            y: this.unpack('price'),
+            type: 'scatter'
+        }];
+        return [
+            this.el.nativeElement,
+            data,
+            layout
+        ]
+    }
+    ngAfterViewInit() {
+        this.plot = Plotly.newPlot.apply(Plotly, this.getPlotlyArgs());
     }
 }

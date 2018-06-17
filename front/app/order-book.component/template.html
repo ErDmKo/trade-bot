@@ -1,5 +1,18 @@
 <div class="order-book">
     <h3 *ngIf="pair" class="order-book__header" [innerHtml]="pair">Order Book</h3>
+    <div class="order-book__chart-info">
+        <select [(ngModel)]="filter.pair" (ngModelChange)="applyFilter({pair: $event})">
+            <option *ngFor="let pair of pairs" [ngValue]="pair">
+                {{ pair.title }}
+            </option>
+        </select>
+        <select [(ngModel)]="filter.group" (ngModelChange)="applyFilter({group: $event})">
+            <option *ngFor="let group of groups" [ngValue]="group">
+                {{ group.title }}
+            </option>
+        </select>
+        <div #chart class="order-book__chart"></div>
+    </div>
     <ul class="order-book__list">
         <li 
           class="order-book__item"
@@ -30,4 +43,5 @@
             </dl>
         </li>
     </ul>
+    <div #chart></div>
 </div>

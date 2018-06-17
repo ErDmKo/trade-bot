@@ -9,12 +9,12 @@ interface Col {
     key: string
     func?: Function
 }
-interface Filtred {
+export interface Filtred {
     title: string
     value?: string
     id: number
 }
-interface Pair extends Filtred {
+export interface Pair extends Filtred {
 }
 interface Page {
     no: number,
@@ -49,7 +49,7 @@ const EXCEED: Array<ExceedState> = [{
     value: '0',
     title: 'Not exceeded'
 }]
-const PAIRS: Array<Pair> = [{
+export const PAIRS: Array<Pair> = [{
     id: null,
     title: 'All pairs'
 }, {

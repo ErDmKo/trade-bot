@@ -52,7 +52,7 @@ async def get_history(request):
     if filterInfo.get('group'):
         group_by = filterInfo['group']
         if group_by == 'minute':
-            sampling = 30
+            sampling = 10 
         if group_by == 'hour':
             sampling = 1 
         if group_by == 'days':
@@ -60,7 +60,7 @@ async def get_history(request):
         if group_by == 'month':
             sampling = 0.001
 
-    history = sa.tablesample(db.history, sa.func.system(sampling))
+    history = sa.tablesample(db.history, sa.func.system(sampling), seed=sa.cast('1', REAL))
 
     if filterInfo.get('from'):
         args.append(history.c.pub_date >= filterInfo.get('from'))
@@ -119,7 +119,6 @@ async def get_history(request):
             query = query \
                 .limit(limit) \
                 .offset(offset)
-
         cursor = await conn.execute(query)
         items = await cursor.fetchall()
         return web.json_response({
