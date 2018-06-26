@@ -82,8 +82,8 @@ export class OrderBookComponent {
         this.filter.from = moment().subtract(
             groupDelta as DurationInputArg1, 
             groupName as DurationInputArg2
-        ).add(moment().utcOffset(), 'minute');
-        this.filter.to = moment().add(moment().utcOffset(), 'minute');
+        ).utcOffset(0, true)
+        this.filter.to = moment().utcOffset(0, true)
 
         this.historyService
             .getList({

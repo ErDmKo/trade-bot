@@ -52,15 +52,20 @@ async def get_history(request):
     if filterInfo.get('group'):
         group_by = filterInfo['group']
         if group_by == 'minute':
-            sampling = 10 
+            sampling = 0 
         if group_by == 'hour':
-            sampling = 1 
-        if group_by == 'days':
+            sampling = 0.3
+        if group_by == 'day':
             sampling = 0.04
+        if group_by == 'week':
+            sampling = 0.01
         if group_by == 'month':
             sampling = 0.001
 
-    history = sa.tablesample(db.history, sa.func.system(sampling), seed=sa.cast('1', REAL))
+    if sampling:
+        history = sa.tablesample(db.history, sa.func.system(sampling), seed=sa.cast('1', REAL))
+    else:
+        history = db.history
 
     if filterInfo.get('from'):
         args.append(history.c.pub_date >= filterInfo.get('from'))
@@ -73,17 +78,18 @@ async def get_history(request):
     else:
         raise Exception('Pair is requried')
     ''' 
-    SELECT 
+
+    EXPLAIN ANALYZE SELECT 
         avg((CAST(((CAST((history_1.resp ->> 0) AS JSONB) -> 'asks'->0) ->> 0) AS REAL) 
         + CAST(((CAST((history_1.resp ->> 0) AS JSONB) -> 'bids'->0) ->> 0) AS REAL)) 
         / 2) AS price, 
         date_trunc('minute', history_1.pub_date) AS pub_date
     FROM 
-        history AS history_1 TABLESAMPLE system(0.001)
+        history AS history_1 TABLESAMPLE system(1)
     WHERE 
-        history_1.pub_date >= '2018-05-11T00:00:00' 
-        AND history_1.pub_date <= '2018-06-12T15:00:00' 
-        AND history_1.pair = 'eth_btc' 
+        history_1.pub_date >= '2018-06-26T17:24:19.814Z' 
+        AND history_1.pub_date <= '2018-06-26T18:24:19.816Z' 
+        AND history_1.pair = 'btc_usd' 
     GROUP BY 
         date_trunc('minute', history_1.pub_date) 
     ORDER BY 
