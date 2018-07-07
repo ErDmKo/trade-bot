@@ -1,6 +1,7 @@
 import sqlalchemy as sa
 import contextlib
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSONB, REAL
+from sqlalchemy.sql import select
 import aiopg.sa
 import asyncio
 import pathlib
@@ -30,6 +31,78 @@ demo_order = sa.Table(
     sa.Column('api', JSONB, nullable=True),
     sa.Column('is_sell', sa.Boolean(), nullable=False),
 )
+
+''' 
+
+EXPLAIN ANALYZE SELECT 
+    avg((CAST(((CAST((history_1.resp ->> 0) AS JSONB) -> 'asks'->0) ->> 0) AS REAL) 
+    + CAST(((CAST((history_1.resp ->> 0) AS JSONB) -> 'bids'->0) ->> 0) AS REAL)) 
+    / 2) AS price, 
+    date_trunc('minute', history_1.pub_date) AS pub_date
+FROM 
+    history AS history_1 TABLESAMPLE system(1)
+WHERE 
+    history_1.pub_date >= '2018-06-26T17:24:19.814Z' 
+    AND history_1.pub_date <= '2018-06-26T18:24:19.816Z' 
+    AND history_1.pair = 'btc_usd' 
+GROUP BY 
+    date_trunc('minute', history_1.pub_date) 
+ORDER BY 
+    pub_date DESC
+LIMIT
+    1000 
+OFFSET
+    0;
+'''
+
+async def get_history(conn, group_by=False, args=[], limit=10, offset=0):
+
+    sampling = False
+    if group_by == 'minute':
+        sampling = 0 
+    if group_by == 'hour':
+        sampling = 0.3
+    if group_by == 'day':
+        sampling = 0.04
+    if group_by == 'week':
+        sampling = 0.01
+    if group_by == 'month':
+        sampling = 0.001
+
+    if sampling:
+        table = sa.tablesample(history, sa.func.system(sampling), seed=sa.cast('1', REAL))
+    else:
+        table = history
+
+    args = [arg(table) for arg in args]
+
+    query = table.c.resp[0].astext.cast(JSONB)['asks'][0][0].astext.cast(REAL)
+    query = query + table.c.resp[0].astext.cast(JSONB)['bids'][0][0].astext.cast(REAL)
+    query = query / 2
+
+    if (group_by):
+        query = sa.func.avg(query)
+
+    date = table.c.pub_date
+    collums = [query.label('price')]
+    if group_by:
+        date = sa.func.date_trunc(group_by, table.c.pub_date).label('pub_date')
+        collums += [date, sa.func.count().label('count')]
+
+    query = select(collums) \
+        .where(sa.sql.and_(*args)) \
+        .order_by(date.desc())
+
+    if group_by:
+        query = query \
+            .group_by(date)
+    else:
+        query = query \
+            .limit(limit) \
+            .offset(offset)
+    cursor = await conn.execute(query)
+    items = await cursor.fetchall()
+    return items
 
 order = sa.Table(
     'order', meta,

@@ -127,14 +127,22 @@ class ThreadStrategy(SimpleStrategy):
         self.order = None
         self.orders = []
         order_table = self.get_order_table()
-        cursor = await self.connection.execute(
-            order_table.select()
-                .where(
-                    (order_table.c.pair == self.PAIR) & 
-                    (order_table.c.api != 'false') & 
-                    (order_table.c.extra[self.ORDER_CLASS.FLAG_NAME].astext == '0')
-                )
-        )
+        query = order_table.select() \
+            .where(
+                (order_table.c.pair == self.PAIR) & \
+                (order_table.c.api != 'false') & \
+                (order_table.c.extra[self.ORDER_CLASS.FLAG_NAME].astext == '0') \
+            )
+        '''
+        ).order_by(
+            func.row_number().over(
+                order_by=order_table.c.pub_date.desc(),
+                partition_by=order_table.c.is_sell
+            ),
+            order_table.c.is_sell
+        ).limit(20)
+        '''
+        cursor = await self.connection.execute(query)
         async for order in cursor:
             order_obj = self.ORDER_CLASS(
                 order,

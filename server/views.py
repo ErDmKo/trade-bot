@@ -2,8 +2,8 @@ import aiohttp_jinja2
 import sqlalchemy as sa
 import asyncio
 import aiohttp
+import datetime
 from sqlalchemy.sql import select
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy.dialects.postgresql import JSONB, REAL
 from aiohttp import web
 from .utils import dumps, handle_socket
@@ -43,90 +43,30 @@ async def order_info(request):
 
 async def get_history(request):
     filterInfo = request.GET
-    limit = 30
-    sampling = 100
+    limit = 10
+    sampling = False
     offset = 0
-    group_by = False;
+    group_by = False
     args = []
 
     if filterInfo.get('group'):
         group_by = filterInfo['group']
-        if group_by == 'minute':
-            sampling = 0 
-        if group_by == 'hour':
-            sampling = 0.3
-        if group_by == 'day':
-            sampling = 0.04
-        if group_by == 'week':
-            sampling = 0.01
-        if group_by == 'month':
-            sampling = 0.001
-
-    if sampling:
-        history = sa.tablesample(db.history, sa.func.system(sampling), seed=sa.cast('1', REAL))
-    else:
-        history = db.history
 
     if filterInfo.get('from'):
-        args.append(history.c.pub_date >= filterInfo.get('from'))
+        args.append(lambda history: history.c.pub_date >= filterInfo.get('from'))
+    else:
+        args.append(lambda history: history.c.pub_date >= datetime.now() - datetime.timedelta(minutes=1))
 
     if filterInfo.get('to'):
-        args.append(history.c.pub_date <= filterInfo.get('to'))
+        args.append(lambda history: history.c.pub_date <= filterInfo.get('to'))
 
     if filterInfo.get('pair'):
-        args.append(history.c.pair == filterInfo.get('pair'))
+        args.append(lambda history: history.c.pair == filterInfo.get('pair'))
     else:
         raise Exception('Pair is requried')
-    ''' 
-
-    EXPLAIN ANALYZE SELECT 
-        avg((CAST(((CAST((history_1.resp ->> 0) AS JSONB) -> 'asks'->0) ->> 0) AS REAL) 
-        + CAST(((CAST((history_1.resp ->> 0) AS JSONB) -> 'bids'->0) ->> 0) AS REAL)) 
-        / 2) AS price, 
-        date_trunc('minute', history_1.pub_date) AS pub_date
-    FROM 
-        history AS history_1 TABLESAMPLE system(1)
-    WHERE 
-        history_1.pub_date >= '2018-06-26T17:24:19.814Z' 
-        AND history_1.pub_date <= '2018-06-26T18:24:19.816Z' 
-        AND history_1.pair = 'btc_usd' 
-    GROUP BY 
-        date_trunc('minute', history_1.pub_date) 
-    ORDER BY 
-        pub_date DESC
-    LIMIT
-        1000 
-    OFFSET
-        0;
-    '''
-
-    query = history.c.resp[0].astext.cast(JSONB)['asks'][0][0].astext.cast(REAL)
-    query = query + history.c.resp[0].astext.cast(JSONB)['bids'][0][0].astext.cast(REAL)
-    query = query / 2
-
-    if (group_by):
-        query = sa.func.avg(query)
     
     async with request.app['db'].acquire() as conn:
-        date = history.c.pub_date
-        collums = [query.label('price')]
-        if group_by:
-            date = sa.func.date_trunc(group_by, history.c.pub_date).label('pub_date')
-            collums += [date, sa.func.count().label('count')]
-
-        query = select(collums) \
-            .where(sa.sql.and_(*args)) \
-            .order_by(date.desc())
-
-        if group_by:
-            query = query \
-                .group_by(date)
-        else:
-            query = query \
-                .limit(limit) \
-                .offset(offset)
-        cursor = await conn.execute(query)
-        items = await cursor.fetchall()
+        items = await db.get_history(conn, group_by, args, limit, offset)
         return web.json_response({
             'history': [dict(q) for q in items],
         }, dumps = dumps)

@@ -1,4 +1,4 @@
-import { BrowserModule } from '@angular/platform-browser';
+import { BrowserModule, Title } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { HttpModule } from '@angular/http';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -41,6 +41,7 @@ const APP_PROVIDERS = [
         FormsModule,
     ],
     providers: [
+        Title,
         ENV_PROVIDERS,
         APP_PROVIDERS
     ]

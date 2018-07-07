@@ -38,9 +38,6 @@ async def update_info(app):
                     print('Error')
                     print_exception()
 
-        await channels['balance_socket'].broadcast(balans_info)
-        await channels['depth_socket'].broadcast(depth_info)
-        await channels['pair_socket'].broadcast(pair_info)
 
         now = datetime.datetime.now()
         if app.get('db'):
@@ -57,6 +54,21 @@ async def update_info(app):
                             resp = dumps(info)
                         )
                     )
+                    _, usd = pair.split('_')
+                    if balans_info.get('funds') \
+                        and balans_info['funds'].get(_):
+
+                        balance = balans_info['funds'].get(_)
+                        if usd == 'usd':
+                            balans_info['funds']['{}_usd'.format(_)] = \
+                            info['bids'][0][0] * balance
+
+
+
+        await channels['balance_socket'].broadcast(balans_info)
+        await channels['depth_socket'].broadcast(depth_info)
+        await channels['pair_socket'].broadcast(pair_info)
+
         await asyncio.sleep(1)
     
 async def on_shutdown(app):

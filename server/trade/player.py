@@ -13,8 +13,8 @@ from server import utils
 from ..btcelib import TradeAPIv1, PublicAPIv3
 from .MultiplePairs import MultiplePairs
 
-START_TIME = '2018-02-08 00:00'
-END_TIME = '2018-02-08 23:59'
+START_TIME = '2018-05-08 00:00'
+END_TIME = '2018-06-08 23:59'
 
 async def load_strategy(app, strategy_name):
     while True:
