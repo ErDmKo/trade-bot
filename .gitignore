@@ -1,6 +1,7 @@
 .env
 *.pyc
 uwsgi.ini
+/data
 npm-debug.log
 .ipynb_checkpoints
 static/
