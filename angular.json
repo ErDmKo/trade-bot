@@ -33,7 +33,6 @@
                     },
                     "configurations": {
                         "production": {
-                            "extractCss": true,
                             "optimization": true,
                             "sourceMap": false,
                             "namedChunks": false,
