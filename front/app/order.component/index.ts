@@ -102,7 +102,7 @@ const ROWS: Array<Col> = [{
     ]
 })
 export class OrderComponent {
-    private orders: any[];
+    orders: any[];
     errorMessage: string;
     pages: Page[];
     rows = ROWS;

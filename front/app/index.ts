@@ -14,7 +14,6 @@ import { OrderDetailComponent } from './order-detail.component';
 import { AppState } from './app.service';
 import { AppRoutingModule } from './app-routing.module';
 
-import { ENV_PROVIDERS } from './environment';
 import { HttpClientModule } from '@angular/common/http';
 
 const APP_PROVIDERS = [
@@ -41,7 +40,6 @@ const APP_PROVIDERS = [
     ],
     providers: [
         Title,
-        ENV_PROVIDERS,
         APP_PROVIDERS
     ]
 })

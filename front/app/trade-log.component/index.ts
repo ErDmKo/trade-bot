@@ -44,8 +44,8 @@ interface iLog {
   ]
 })
 export class TradeLogComponent {
-    private data: any[] = [];
-    private errorMessage: string;
+    data: any[] = [];
+    errorMessage: string;
 
     constructor(
         private tradeLogService: TradeLogService

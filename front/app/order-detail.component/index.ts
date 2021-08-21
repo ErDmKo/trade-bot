@@ -13,7 +13,7 @@ import { ActivatedRoute, Params } from '@angular/router';
     ]
 })
 export class OrderDetailComponent {
-    private order: any;
+    order: any;
     ngOnInit(): void {
         this.route.params.forEach((params: Params) => {
             this.getOrder(params.id);

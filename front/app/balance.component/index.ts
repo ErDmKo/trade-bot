@@ -13,7 +13,7 @@ import { AppState } from '../app.service';
   templateUrl: './template.html'
 })
 export class BalanceComponent {
-    private data: Object;
+    data: Object;
     errorMessage: string;
 
     constructor(

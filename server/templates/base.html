@@ -1,12 +1,8 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <base href="/">
     {% block head %}
-        <script src="{{ url('static', filename='polyfills.bundle.js') }}"></script>
-        <script src="{{ url('static', filename='vendor.bundle.js') }}"></script>
-        <script src="{{ url('static', filename='main.bundle.js') }}"></script>
-        <link rel="stylesheet" type="text/css"
-              href="{{ url('static', filename='style.css') }}" />
         <title>{{ title }}</title>
     {% endblock %}
     <base href='/'/>
@@ -16,5 +12,10 @@
     {% endblock %}
     <app>
     </app>
+    <script src="{{ url('static', filename='polyfills-es5.js') }}"></script>
+    <script src="{{ url('static', filename='main-es5.js') }}"></script>
+    <script src="{{ url('static', filename='runtime-es5.js') }}"></script>
+    <link rel="stylesheet" type="text/css"
+          href="{{ url('static', filename='style.css') }}" />
   </body>
 </html>

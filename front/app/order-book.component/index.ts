@@ -46,10 +46,11 @@ const GROUPS: Array<Filtred> = [{
   ]
 })
 export class OrderBookComponent {
-    private data: any[];
+    data: any[];
     errorMessage: string;
-    private deph: any;
-    private plot: any;
+    deph: any;
+    plot: any;
+    pair: boolean = false
 
     @ViewChild('chart', {static: false}) el:ElementRef;
 

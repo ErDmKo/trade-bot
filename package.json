@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "trade bot front end",
   "main": "index.js",
-  "scripts": {},
+  "scripts": {
+    "build": "ng build --configuration=production"
+  },
   "keywords": [
     "bot"
   ],
