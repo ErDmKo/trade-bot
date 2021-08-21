@@ -2,7 +2,6 @@
 import {throwError as observableThrowError  } from 'rxjs';
 import { HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Response } from '@angular/http';
 import { SocketService } from '../common/socket.service'
 
 @Injectable()
@@ -38,7 +37,7 @@ export class PairService extends SocketService {
         let errMsg: string;
         if (error instanceof Response) {
             const body = error.json() || '';
-            const err = body.error || JSON.stringify(body);
+            const err = JSON.stringify(body);
             errMsg = `${error.status} - ${error.statusText || ''} ${err}`;
         } else {
             errMsg = error.message ? error.message : error.toString();

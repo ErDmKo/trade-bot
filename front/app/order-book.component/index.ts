@@ -51,7 +51,7 @@ export class OrderBookComponent {
     private deph: any;
     private plot: any;
 
-    @ViewChild('chart') el:ElementRef;
+    @ViewChild('chart', {static: false}) el:ElementRef;
 
     pairs = PAIRS.slice(1);
     groups = GROUPS;
