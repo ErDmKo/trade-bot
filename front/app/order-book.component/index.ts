@@ -4,10 +4,11 @@ import { HistoryService } from './history.service'
 import { ActivatedRoute, Params } from '@angular/router';
 import { PAIRS, Filtred } from '../order.component'
 import * as moment from 'moment';
-import * as Plotly from 'plotly.js/lib/core';
+// import * as Plotly from 'plotly.js/lib/core';
 import { Moment, DurationInputArg1, DurationInputArg2 } from 'moment';
 
 import { AppState } from '../app.service';
+import { HttpParams } from '@angular/common/http';
 
 
 interface Filter {
@@ -85,18 +86,25 @@ export class OrderBookComponent {
         ).utcOffset(0, true)
         this.filter.to = moment().utcOffset(0, true)
 
+        const params = new HttpParams();
+        const paramsObj = {
+            pair: this.filter.pair.title,
+            group: this.filter.group.title,
+            from: this.filter.from,
+            to: this.filter.to
+        };
+        Object.keys(paramsObj)
+            .map(key => [key, paramsObj[key]])
+            .forEach(([key, val]) => {
+                params.set(key, val);
+            });
         this.historyService
-            .getList({
-                pair: this.filter.pair.title,
-                group: this.filter.group.title,
-                from: this.filter.from,
-                to: this.filter.to
-            })
+            .getList(params)
             .subscribe(
                 info => {
                     this.deph = info;
                     if (this.plot) {
-                        Plotly.newPlot.apply(Plotly, this.getPlotlyArgs());
+                        // Plotly.newPlot.apply(Plotly, this.getPlotlyArgs());
                     }
                 },
                 error => this.errorMessage = <any>error
@@ -140,6 +148,6 @@ export class OrderBookComponent {
         ]
     }
     ngAfterViewInit() {
-        this.plot = Plotly.newPlot.apply(Plotly, this.getPlotlyArgs());
+        // this.plot = Plotly.newPlot.apply(Plotly, this.getPlotlyArgs());
     }
 }

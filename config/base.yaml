@@ -2,10 +2,10 @@ postgres:
   database: trade
   user: bot_console_user
   password: bot_console_user
-  host: localhost
+  host: db
   port: 5432
   minsize: 5
   maxsize: 10
 
 host: 0.0.0.0
-port: 8080
+port: 8000

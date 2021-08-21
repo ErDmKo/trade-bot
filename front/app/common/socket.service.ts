@@ -1,7 +1,8 @@
-import { Subject } from 'rxjs/Subject';
-import { Observable } from 'rxjs/Observable';
-import { Response } from '@angular/http';
+
+import {map} from 'rxjs/operators';
+import { Subject ,  Observable } from 'rxjs';
 import { WebSocketSubject } from 'rxjs/observable/dom/WebSocketSubject'
+import { HttpResponse } from '@angular/common/http';
 
 export abstract class SocketService {
     sub: Subject<String>
@@ -15,7 +16,7 @@ export abstract class SocketService {
         this.sub = WebSocketSubject.create(
             this.getRelativeSocket(this.wsUrl)
         )
-        let obser = this.sub.map(this.extractData);
+        let obser = this.sub.pipe(map(this.extractData));
         this.sub.next('connect');
         return obser;
     }
@@ -25,5 +26,5 @@ export abstract class SocketService {
         let protocol: String = loc.protocol === "https:" ? "wss" : "ws";
         return `${protocol}://${loc.host}${path[0] == '/' ? '' : loc.pathname}${path}`
     }
-    protected abstract extractData(res: Response | Object): Object;
+    protected abstract extractData(res: HttpResponse<string> | Object): any;
 }

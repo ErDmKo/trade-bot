@@ -1,8 +1,8 @@
+
+import {throwError as observableThrowError  } from 'rxjs';
+import { HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Response } from '@angular/http';
-import { Observable } from 'rxjs/Observable';
-import { Subject } from 'rxjs/Subject';
-import { WebSocketSubject } from 'rxjs/observable/dom/WebSocketSubject'
 import { SocketService } from '../common/socket.service'
 
 @Injectable()
@@ -18,7 +18,7 @@ export class PairService extends SocketService {
         return this.pairList;
     }
 
-    protected extractData(res: Response | Object) {
+    protected extractData(res: HttpResponse<Record<string, any>> | Object) {
         let body = {};
         if (res instanceof Response) {
             body = res.json();
@@ -44,6 +44,6 @@ export class PairService extends SocketService {
             errMsg = error.message ? error.message : error.toString();
         }
         console.error(errMsg);
-        return Observable.throw(errMsg);
+        return observableThrowError(errMsg);
     }
 }

@@ -1,11 +1,8 @@
 import { Injectable } from '@angular/core';
-import { Http, Response } from '@angular/http';
-import { Observable } from 'rxjs/Observable';
-import { Subject } from 'rxjs/Subject';
-import { WebSocketSubject } from 'rxjs/observable/dom/WebSocketSubject'
 import { SocketService } from '../common/socket.service'
 import { IBalance } from '../common/api.interface'
 import { IViewBalance} from '../common/view.interface'
+import { HttpResponse } from '@angular/common/http';
 
 
 @Injectable()
@@ -16,14 +13,14 @@ export class BalanceService extends SocketService {
         super();
     }
 
-    protected extractData(res: Response | Object) {
+    protected extractData(res: HttpResponse<Record<string, any>> | Object) {
         let body: IBalance;
-        if (res instanceof Response) {
-            body = res.json();
+        if (res instanceof HttpResponse) {
+            body = res.body
         } else {
             body = res;
         }
-        let out: IViewBalance = Object.assign({}, body);
+        let out: IViewBalance = Object.assign({}, body) as any;
         if (body.funds) {
             out.funds = Object.keys(body.funds).map((key)=>({
                 'amount': body.funds[key],

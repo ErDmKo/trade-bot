@@ -1,34 +1,32 @@
+
+import {map} from 'rxjs/operators';
 import { Injectable } from '@angular/core';
-import { 
-    Http,
-    RequestOptionsArgs,
-    Response,
-    Headers,
-    URLSearchParams
-} from '@angular/http';
+import { HttpClient, HttpHeaders, HttpParams, HttpResponse } from '@angular/common/http';
 
 @Injectable()
 export class HistoryService {
     private dataUrl = '/api/history';
-    private headers = new Headers({
+    private headers = new HttpHeaders({
         'Content-Type': 'application/json'
     });
     constructor(
-        private http: Http
+        private http: HttpClient
     ) {
     }
-    getList(params = {}) {
-        const args: RequestOptionsArgs = { params }
-        return this.http.get(this.dataUrl, args)
-            .map(this._toJSON.bind(this))
+    getList(params: HttpParams) {
+        return this.http.get(this.dataUrl, {
+            params,
+            headers: this.headers
+        }).pipe(
+        map(this._toJSON.bind(this)))
     }
-    _toJSON(res: Response | Object) {
+    _toJSON(res: HttpResponse<Record<string, any>>) {
         let body: {
             history?: any[],
             meta?: any
         } = {};
-        if (res instanceof Response) {
-            body = res.json();
+        if (res instanceof HttpResponse) {
+            body = res.body;
         }
         return body;
     }

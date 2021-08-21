@@ -1,45 +1,48 @@
+
+import {map} from 'rxjs/operators';
+import { HttpClient, HttpHeaders, HttpParams, HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Http, RequestOptionsArgs, Response, Headers, URLSearchParams } from '@angular/http';
 import * as moment from 'moment';
 
 @Injectable()
 export class OrderService {
     private dataUrl = '/api/order';
-    private headers = new Headers({'Content-Type': 'application/json'});
+    private headers = new HttpHeaders({'Content-Type': 'application/json'});
 
     constructor(
-        private http: Http
+        private http: HttpClient
     ) {
     }
     removeOrder(id) {
-        let params: URLSearchParams = new URLSearchParams();
+        let params = new HttpParams();
         params.set('id', id);
 
         return this.http.delete(this.dataUrl, {
-                search: params
-            })
-            .map(this._toJSON.bind(this))
+                params,
+            }).pipe(
+            map(this._toJSON.bind(this)))
     }
     getById(id: string) {
-        return this.http.get(`${this.dataUrl}/${id}`)
-            .map(this._toJSONone.bind(this))
+        return this.http.get(`${this.dataUrl}/${id}`).pipe(
+            map(this._toJSONone.bind(this)))
     }
-    getList(params = {}) {
-        const args: RequestOptionsArgs = { params }
-        return this.http.get(this.dataUrl, args)
-            .map(this._toJSON.bind(this))
+    getList(params: HttpParams) {
+        return this.http.get(this.dataUrl, {
+            params
+        }).pipe(
+            map(this._toJSON.bind(this)))
     }
     onOrder(price, pair) {
-        return this.http.post(this.dataUrl, JSON.stringify({
+        return this.http.post(this.dataUrl, {
             price: price,
             pair: pair
-        }), {
+        }, {
             headers: this.headers
-        }).map(this._toJSON.bind(this))
+        }).pipe(map(this._toJSON.bind(this)))
     }
-    _toJSONone(res: Response) {
-        if (res instanceof Response) {
-            return this._toModel(res.json());
+    _toJSONone(res: HttpResponse<Record<string, any>>) {
+        if (res instanceof HttpResponse) {
+            return this._toModel(res.body);
         } else {
             return this._toModel(res);
         }
@@ -51,12 +54,12 @@ export class OrderService {
             }
         });
     }
-    _toJSON(res: Response | Object) {
+    _toJSON(res: HttpResponse<Record<string, any>> | Object) {
         let body: {
             orders?: any[]
         } = {};
-        if (res instanceof Response) {
-            body = res.json();
+        if (res instanceof HttpResponse) {
+            body = res.body;
         } else {
             body = res;
         }

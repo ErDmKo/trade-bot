@@ -1,5 +1,7 @@
+
+import {mergeMap, map, filter} from 'rxjs/operators';
 import { Component, ViewEncapsulation } from '@angular/core';
-import 'rxjs/add/operator/filter';
+
 import { Router, NavigationEnd, ActivatedRoute } from '@angular/router';
 import { Title } from '@angular/platform-browser';
 
@@ -26,15 +28,15 @@ export class AppComponent {
     }
 
     ngOnInit() {
-        this.router.events
-            .filter(e => e instanceof NavigationEnd)
-            .map(() => this.route)
-            .map((route) => {
+        this.router.events.pipe(
+            filter(e => e instanceof NavigationEnd),
+            map(() => this.route),
+            map((route) => {
                 while (route.firstChild) route = route.firstChild;
                 return route
-            })
-            .filter(r => r.outlet == 'primary')
-            .mergeMap(r => r.data)
+            }),
+            filter(r => r.outlet == 'primary'),
+            mergeMap(r => r.data),)
             .subscribe(e => this.titleService.setTitle(e.title || '404'));
     }
 

@@ -48,9 +48,11 @@ async def handle_socket(ws, api=False, method=False):
 
 def load_config(fname=str(pathlib.Path('.') / 'config' / 'base.yaml')):
     with open(fname, 'rt') as f:
-        data = yaml.load(f)
-    with open(os.path.abspath(os.path.join(fname, '..', 'local.yaml'))) as f:
-        data.update(yaml.load(f))
+        data = yaml.load(f, Loader=yaml.BaseLoader)
+    localConf = os.path.abspath(os.path.join(fname, '..', 'local.yaml'))
+    if os.path.isfile(localConf):
+        with open(localConf) as f:
+            data.update(yaml.load(f, Loader=yaml.BaseLoader))
     return data
 
 class DecimalEncoder(json.JSONEncoder):

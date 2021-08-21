@@ -1,5 +1,5 @@
+import { HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Response } from '@angular/http';
 import { SocketService } from '../common/socket.service'
 
 @Injectable()
@@ -10,10 +10,10 @@ export class TradeLogService extends SocketService {
         super();
     }
 
-    protected extractData(res: Response | Object) {
+    protected extractData(res: HttpResponse<Record<string, any>> | Object) {
         let body = {};
-        if (res instanceof Response) {
-            body = res.json();
+        if (res instanceof HttpResponse) {
+            body = res.body;
         } else {
             body = res;
         }

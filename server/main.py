@@ -18,6 +18,8 @@ from .trade.MultiplePairs import MultiplePairs
 
 from server import btcelib 
 
+logger = logging.getLogger(__name__)
+
 def init():
     loop = asyncio.get_event_loop()
 
@@ -28,11 +30,12 @@ def init():
     conf = load_config(str(pathlib.Path('.') / 'config' / 'base.yaml'))
     app['config'] = conf
 
-    app['pubapi'] = btcelib.PublicAPIv3(*MultiplePairs.PAIRS)
-    app['privapi'] = btcelib.TradeAPIv1({
-        'Key': conf['api']['API_KEY'],
-        'Secret': conf['api']['API_SECRET']
-    })
+    # app['pubapi'] = btcelib.PublicAPIv3(*MultiplePairs.PAIRS)
+    if app.get('privapi'):
+        app['privapi'] = btcelib.TradeAPIv1({
+            'Key': conf['api']['API_KEY'],
+            'Secret': conf['api']['API_SECRET']
+        })
     app['socket_channels'] = defaultdict(BList)
 
     # setup Jinja2 template renderer
@@ -47,7 +50,7 @@ def init():
     # setup views and routes
     setup_routes(app)
     setup_middlewares(app)
-    setup_info_updater(app)
+    # setup_info_updater(app)
     prog = sys.argv[1] if len(sys.argv) > 1 else ''
     add_strategy(app, prog if prog else 'VolumeStrategy')
 
@@ -63,6 +66,7 @@ def main():
         host=app['config']['host'],
         port=app['config']['port']
     )
+    logger.debug('app inited')
 
 if __name__ == '__main__':
     main()

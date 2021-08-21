@@ -16,7 +16,6 @@ def print_exception():
     traceback.print_exception(exc_type, exc_value, exc_traceback)
 
 async def update_info(app):
-
     while True:
         try:
             pair_info = await app['pubapi'].call('ticker')

@@ -127,15 +127,23 @@ async def get_engine(conf, loop):
         user=conf['user'],
         password=conf['password'],
         host=conf['host'],
-        port=conf['port'],
-        minsize=conf['minsize'],
-        maxsize=conf['maxsize'],
+        port=int(conf['port']),
+        minsize=int(conf['minsize']),
+        maxsize=int(conf['maxsize']),
         loop=loop)
     return engine
     
-async def init_pg(app):
-    engine = await get_engine(app['config']['postgres'], app.loop)
-    app['db'] = engine
+async def init_pg(app,  tryNo=None):
+    if not tryNo:
+        tryNo = 1
+    try:
+        engine = await get_engine(app['config']['postgres'], app.loop)
+        app['db'] = engine
+    except Exception as e:
+        if tryNo > 5:
+            raise e
+        await asyncio.sleep(tryNo)
+        await init_pg(app, tryNo + 1)
 
 async def close_pg(app):
     app['db'].close()
