@@ -9,7 +9,7 @@ import { PairService } from './pair.service';
     PairService,
   ],
   styleUrls: [
-      './stylei.css'
+      './stylei.scss'
   ],
   templateUrl: './template.html'
 })

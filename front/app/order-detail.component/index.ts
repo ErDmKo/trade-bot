@@ -5,7 +5,7 @@ import { ActivatedRoute, Params } from '@angular/router';
 @Component({
     selector: 'order-detail',
     styleUrls: [
-        './style.css'
+        './style.scss'
     ],
     templateUrl: './template.html',
     providers: [

@@ -7,14 +7,12 @@ import { Title } from '@angular/platform-browser';
 
 import { AppState } from './app.service';
 
-import './rxjs-operators';
-
 @Component({
     selector: 'app',
     encapsulation: ViewEncapsulation.None,
     templateUrl: './template.html',
     styleUrls: [
-        './style.css'
+        './style.scss'
     ],
 })
 export class AppComponent {

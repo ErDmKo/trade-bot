@@ -1,0 +1,52 @@
+{
+    "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
+    "version": 1,
+    "projects": {
+        "trade-bot": {
+            "root": "front",
+            "sourceRoot": "front",
+            "projectType": "application",
+            "schematics": {
+                "@schematics/angular:component": {
+                    "changeDetection": "OnPush"
+                }
+            },
+            "architect": {
+                "serve": {
+                    "builder": "@angular-devkit/build-angular:dev-server",
+                    "options": {
+                        "browserTarget": "trade-bot:build"
+                    },
+                    "configurations": {
+                        "production": {
+                            "browserTarget": "trade-bot:build:production"
+                        }
+                    }
+                },
+                "build": {
+                    "builder": "@angular-devkit/build-angular:browser",
+                    "options": {
+                        "outputPath": "server/static",
+                        "index": "front/index.html",
+                        "tsConfig": "tsconfig.json",
+                        "main": "front/main.browser.ts"
+                    },
+                    "configurations": {
+                        "production": {
+                            "extractCss": true,
+                            "optimization": true,
+                            "outputHashing": "all",
+                            "sourceMap": false,
+                            "namedChunks": false,
+                            "aot": true,
+                            "extractLicenses": true,
+                            "vendorChunk": false,
+                            "buildOptimizer": true
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "defaultProject": "trade-bot"
+}

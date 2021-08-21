@@ -37,7 +37,7 @@ const GROUPS: Array<Filtred> = [{
 @Component({
   selector: 'order-book',
   styleUrls: [
-      './style.css'
+      './style.scss'
   ],
   templateUrl: './template.html',
   providers: [

@@ -8,7 +8,7 @@ import { AppState } from '../app.service';
     BalanceService,
   ],
   styleUrls: [
-      './style.css'
+      './style.scss'
   ],
   templateUrl: './template.html'
 })

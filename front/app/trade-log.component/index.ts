@@ -1,11 +1,11 @@
 import { 
-    Component,
     transition,
     state,
     style,
     trigger,
     animate
-} from '@angular/core';
+} from '@angular/animations';
+import { Component } from '@angular/core';
 import { TradeLogService } from './trade-log.service'
 
 interface iLog {
@@ -15,7 +15,7 @@ interface iLog {
 @Component({
   selector: 'trade-log',
   styleUrls: [
-      './style.css'
+      './style.scss'
   ],
   templateUrl: './template.html',
   providers: [

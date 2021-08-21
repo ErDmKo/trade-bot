@@ -94,7 +94,7 @@ const ROWS: Array<Col> = [{
 @Component({
     selector: 'order',
     styleUrls: [
-        './style.css'
+        './style.scss'
     ],
     templateUrl: './template.html',
     providers: [

@@ -1,7 +1,7 @@
 
 import {map} from 'rxjs/operators';
 import { Subject ,  Observable } from 'rxjs';
-import { WebSocketSubject } from 'rxjs/observable/dom/WebSocketSubject'
+import { webSocket } from "rxjs/webSocket";
 import { HttpResponse } from '@angular/common/http';
 
 export abstract class SocketService {
@@ -13,7 +13,7 @@ export abstract class SocketService {
     }
 
     public getWsData (): Observable<any[]> {
-        this.sub = WebSocketSubject.create(
+        this.sub = webSocket(
             this.getRelativeSocket(this.wsUrl)
         )
         let obser = this.sub.pipe(map(this.extractData));
