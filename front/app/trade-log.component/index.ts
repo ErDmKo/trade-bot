@@ -18,9 +18,6 @@ interface iLog {
       './style.scss'
   ],
   templateUrl: './template.html',
-  providers: [
-    TradeLogService
-  ],
   animations: [
       trigger('flyInOut', [
           state('in', style({

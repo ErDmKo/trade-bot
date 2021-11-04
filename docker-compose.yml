@@ -17,13 +17,18 @@ services:
         timeout: 5s
         retries: 5
   web:
+    image: web_image
     build: .
-    environment:
-      - PATH=$PATH:/root/.nvm/versions/node/v12.22.7/bin
-    command: node_modules/.bin/nodemon --watch server -e py --exec "python -m server"
+    command: npm run dev-server
     volumes:
-      - .:/app
+      - ./:/app
     ports:
       - "8000:8000"
     depends_on:
       - db
+  front:
+    image: web_image
+    depends_on: [web]
+    command: npm run dev-front
+    volumes:
+      - ./:/app

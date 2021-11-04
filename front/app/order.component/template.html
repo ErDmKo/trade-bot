@@ -1,4 +1,4 @@
-<div class="order">
+<div class="order" *ngIf="filter">
     <div class="order__header">
         {{ filter.pair.title }} Last <span *ngIf="parent">childs of {{ parent }}</span> Order
         <select [(ngModel)]="filter.pair" (ngModelChange)="applyFilter({pair: $event})">

@@ -10,6 +10,11 @@ export interface IBaseBalance {
 }
 export interface IBalance extends IBaseBalance {
     funds?: {
-        [currency: string]: string
+        [currency: string]: {
+            amount: number,
+            currency: string,
+            name: string,
+            title: string,
+        }
     }
 }

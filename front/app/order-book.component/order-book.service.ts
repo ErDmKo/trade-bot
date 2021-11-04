@@ -2,8 +2,16 @@ import { HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { SocketService } from '../common/socket.service'
 
+type DeepType = {
+    name: string
+    params: {
+        name: string,
+        value: [price: number, amount: number][]
+    }[]
+}[]
+
 @Injectable()
-export class OrderBookService extends SocketService {
+export class OrderBookService extends SocketService<DeepType> {
     protected wsUrl = "/api/ws_order_book"
 
     constructor(){
@@ -23,6 +31,6 @@ export class OrderBookService extends SocketService {
                     name: param,
                     value: body[key][param].slice(0, 10)
                 }))
-        })) || {};
+        })) || [];
     }
 }

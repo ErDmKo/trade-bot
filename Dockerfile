@@ -13,6 +13,7 @@ COPY package.json ./
 SHELL ["/bin/bash", "--login", "-c"]
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
 RUN nvm install 12
+ENV PATH="$PATH:/root/.nvm/versions/node/v12.22.7/bin"
 
 COPY . .
 

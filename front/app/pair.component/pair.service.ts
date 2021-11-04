@@ -5,7 +5,7 @@ import { Injectable } from '@angular/core';
 import { SocketService } from '../common/socket.service'
 
 @Injectable()
-export class PairService extends SocketService {
+export class PairService extends SocketService<any> {
     protected wsUrl = "/api/ws_pairs"
     private pairList = [];
 

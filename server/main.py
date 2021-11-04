@@ -2,7 +2,6 @@ import asyncio
 import logging
 import pathlib
 from server.tinkoff import getAsyncClient
-import sys
 
 import jinja2
 
@@ -12,13 +11,8 @@ import os
 from .routes import setup_routes
 from .utils import load_config, BList
 from collections import defaultdict
-from .info_updater import setup_info_updater
 from .middlewares import setup_middlewares
 from .db import close_pg, init_pg
-from .trade.player import add_strategy
-from .trade.MultiplePairs import MultiplePairs
-
-from server import btcelib
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +23,7 @@ def init():
     app = web.Application()
 
     # load config from yaml file in current dir
-    conf = load_config(str(pathlib.Path('.') / 'config' / 'base.yaml'))
+    conf = load_config()
     app['config'] = conf
 
     # app['pubapi'] = btcelib.PublicAPIv3(*MultiplePairs.PAIRS)
@@ -56,15 +50,18 @@ def init():
 
 async def asyncInit(app):
     runner = web.AppRunner(app)
-    if app['config'].get('pubtoken'):
-        app['brokerClient'] = await getAsyncClient(app['config'].get('pubtoken'))
+    token = app['config'].get('api', {}).get('pubtoken')
+    tokenInfo = bool(token)
+    logger.info(f'Check token {tokenInfo}')
+    if token:
+        app['brokerClient'] = await getAsyncClient(token)
     await runner.setup()
     site = web.TCPSite(
         runner,
         app['config']['host'],
         app['config']['port']
     )
-    logger.info(' Serve at {}:{}'.format(
+    logger.info('Serve at {}:{}'.format(
         app['config']['host'],
         app['config']['port']
     ))

@@ -34,13 +34,14 @@
                         "vendorChunk": true,
                         "extractLicenses": false,
                         "buildOptimizer": false,
-                        "sourceMap": true,
+                        "sourceMap": false,
                         "optimization": false,
                         "namedChunks": true
                     },
                     "configurations": {
                         "production": {
-                            "optimization": true,
+                            "//": "https://github.com/vitejs/vite/issues/2671#issuecomment-817615458",
+                            "optimization": false,
                             "sourceMap": false,
                             "namedChunks": false,
                             "aot": true,

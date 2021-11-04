@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "build": "ng build --configuration=production",
-    "dev-server": "nodemon --exec .env/bin/python -m server",
+    "dev-server": "nodemon --watch server -e py --exec \"python -m server\"",
+    "dev-front": "ng build --watch --configuration=production",
     "lint-server": "find ./server -name '*.py' -exec autopep8 --in-place {} ;"
   },
   "keywords": [

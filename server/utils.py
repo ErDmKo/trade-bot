@@ -5,7 +5,9 @@ import pathlib
 import aiohttp
 from decimal import Decimal
 from datetime import date as dateFormat
+import logging
 
+logger = logging.getLogger(__name__)
 
 class BList(list):
 
@@ -20,7 +22,7 @@ class BList(list):
                 self.remove(waiter)
                 continue
             try:
-                waiter.send_json(message, dumps=dumps)
+                await waiter.send_json(message, dumps=dumps)
             except RuntimeError as e:
                 if str(e) == 'websocket connection is closing':
                     print('close by client')
@@ -33,19 +35,21 @@ class BList(list):
 
 async def handle_socket(ws, app=False, method=False):
     api = app.get('brokerClient')
+    logger.info('handle call')
     async for msg in ws:
+        logger.info(f'new message {msg} {aiohttp.WSMsgType.TEXT} {msg.type == aiohttp.WSMsgType.TEXT}')
         if msg.type == aiohttp.WSMsgType.TEXT:
-            if msg.data == 'connect':
+            if msg.data.replace('"', '') == 'connect':
+                logger.info(f'connect - "{api}"')
                 if api:
                     info = await api.call(method)
-                    ws.send_json(info, dumps=dumps)
+                    await ws.send_json(info, dumps=dumps)
             elif msg.data == 'close':
                 await ws.close()
             else:
-                print(msg.data)
+                logger.info(f'unknown message data - "{msg.data}"')
         elif msg.type == aiohttp.WSMsgType.ERROR:
-            print('ws connection closed with exception %s' %
-                  ws.exception())
+            logger.info(f'ws connection closed with exception {ws.exception()}')
     return ws
 
 
@@ -54,6 +58,7 @@ def load_config(fname=str(pathlib.Path('.') / 'config' / 'base.yaml')):
         data = yaml.load(f, Loader=yaml.BaseLoader)
     localConf = os.path.abspath(os.path.join(fname, '..', 'local.yaml'))
     if os.path.isfile(localConf):
+        logger.info('Use local config')
         with open(localConf) as f:
             data.update(yaml.load(f, Loader=yaml.BaseLoader))
     return data

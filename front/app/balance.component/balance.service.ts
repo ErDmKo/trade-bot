@@ -5,8 +5,10 @@ import { IViewBalance} from '../common/view.interface'
 import { HttpResponse } from '@angular/common/http';
 
 
-@Injectable()
-export class BalanceService extends SocketService {
+@Injectable({
+    providedIn: 'root'
+})
+export class BalanceService extends SocketService<IViewBalance> {
     protected wsUrl = "/api/ws_balance";
 
     constructor(){
@@ -22,10 +24,15 @@ export class BalanceService extends SocketService {
         }
         let out: IViewBalance = Object.assign({}, body) as any;
         if (body.funds) {
-            out.funds = Object.keys(body.funds).map((key)=>({
-                'amount': body.funds[key],
-                'name': key
-            }));
+            out.funds = Object.keys(body.funds).map((key) => {
+                const assetInfo = body.funds[key];
+                return {
+                    amount: assetInfo.amount,
+                    currency: assetInfo.currency.toUpperCase(),
+                    title: assetInfo.title,
+                    name: key
+                }
+            });
         }
         return out;
     }

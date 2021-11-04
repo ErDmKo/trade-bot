@@ -2,7 +2,7 @@ import { Component, ViewChild, ElementRef } from '@angular/core';
 import { OrderBookService } from './order-book.service'
 import { HistoryService } from './history.service'
 import { ActivatedRoute, Params } from '@angular/router';
-import { PAIRS, Filtred } from '../order.component'
+import { Filtred, Pair } from '../order.component'
 import * as moment from 'moment';
 // import * as Plotly from 'plotly.js/lib/core';
 import { Moment, DurationInputArg1, DurationInputArg2 } from 'moment';
@@ -12,8 +12,8 @@ import { HttpParams } from '@angular/common/http';
 
 
 interface Filter {
-    pair: Filtred,
-    group: Filtred,
+    pair?: Filtred,
+    group?: Filtred,
     from?: Moment,
     to?: Moment
 }
@@ -54,13 +54,10 @@ export class OrderBookComponent {
 
     @ViewChild('chart', {static: false}) el:ElementRef;
 
-    pairs = PAIRS.slice(1);
+    pairs: Array<Pair> = []
     groups = GROUPS;
 
-    filter: Filter = {
-        pair: this.pairs[0],
-        group: GROUPS[0]
-    }
+    filter?: Filter
     constructor(
         public appState: AppState,
         private orderBookService: OrderBookService,
@@ -69,9 +66,10 @@ export class OrderBookComponent {
     ) {}
 
     applyFilter(filter = {}) {
-        this.filter = Object.assign(this.filter, filter);
-
-
+        if (!this.filter) {
+            return;
+        }
+        this.filter = Object.assign(this.filter || {}, filter);
         let groupName = 'month';
         let groupDelta = 2;
         const selectedIndex = this.groups.map(group => group.id)

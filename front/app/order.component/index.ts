@@ -3,6 +3,7 @@ import { AppState } from '../app.service';
 import { OrderService } from './order.service';
 import { ActivatedRoute, Params } from '@angular/router';
 import * as moment from 'moment';
+import { BalanceService } from 'app/balance.component/balance.service';
 
 interface Col {
     title: string,
@@ -21,9 +22,6 @@ interface Page {
     selected: boolean
 }
 interface ExceedState extends Filtred {
-}
-interface Filter {
-    [key: string]: Filtred
 }
 const IS_SELL: Array<Filtred> = [{
     id: null,
@@ -48,19 +46,6 @@ const EXCEED: Array<ExceedState> = [{
     id: 2,
     value: '0',
     title: 'Not exceeded'
-}]
-export const PAIRS: Array<Pair> = [{
-    id: null,
-    title: 'All pairs'
-}, {
-    id: 1,
-    title: 'btc_usd'
-}, {
-    id: 2,
-    title: 'eth_usd'
-}, {
-    id: 3,
-    title: 'eth_btc'
 }]
 
 const ROWS: Array<Col> = [{
@@ -91,6 +76,12 @@ const ROWS: Array<Col> = [{
     func: (val) => val
 }, col));
 
+type FilterInfo = {
+    pair: Pair
+    is_exceed: ExceedState,
+    is_sell: Filtred
+}
+
 @Component({
     selector: 'order',
     styleUrls: [
@@ -98,7 +89,7 @@ const ROWS: Array<Col> = [{
     ],
     templateUrl: './template.html',
     providers: [
-        OrderService
+        OrderService,
     ]
 })
 export class OrderComponent {
@@ -108,13 +99,9 @@ export class OrderComponent {
     rows = ROWS;
     pageSize = 30;
     page = 0;
-    //shit code
-    filter: Filter = {
-        pair: PAIRS[0],
-        is_exceed: EXCEED[0],
-        is_sell: IS_SELL[0]
-    };
-    pairs = PAIRS;
+    //shit cod
+    filter?: FilterInfo;
+    pairs: Pair[] = []
     exceededList = EXCEED;
     sellList = IS_SELL;
     // ----
@@ -128,6 +115,7 @@ export class OrderComponent {
     constructor(
         public appState: AppState,
         private orderService: OrderService,
+        private balanceService: BalanceService,
         private route: ActivatedRoute
     ) {
     }
@@ -140,6 +128,25 @@ export class OrderComponent {
             )
     }
     ngOnInit () {
+        this.balanceService.getWsData()
+            .subscribe((data) => {
+                console.log('info resived')
+                this.pairs = data.funds.map((asset) => {
+                    return {
+                        id: asset.amount,
+                        title: `${asset.name}/${asset.currency}`
+                    }
+                })
+                if (!this.filter) {
+                    this.filter = {
+                        pair: this.pairs[0],
+                        is_exceed: EXCEED[0],
+                        is_sell: IS_SELL[0]
+                    }
+                }
+            }, (error) => {
+                this.pairs = [];
+            });
         this.route.params.forEach((params: Params) => {
             this.orderService
                 .getList(this.getListParams({

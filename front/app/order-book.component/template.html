@@ -1,6 +1,6 @@
 <div class="order-book">
     <h3 *ngIf="pair" class="order-book__header" [innerHtml]="pair">Order Book</h3>
-    <div class="order-book__chart-info">
+    <div class="order-book__chart-info" *ngIf="filter">
         <select [(ngModel)]="filter.pair" (ngModelChange)="applyFilter({pair: $event})">
             <option *ngFor="let pair of pairs" [ngValue]="pair">
                 {{ pair.title }}

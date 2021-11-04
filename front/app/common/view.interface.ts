@@ -1,8 +1,5 @@
-import { IBaseBalance } from './api.interface'
+import { IBalance, IBaseBalance } from './api.interface'
 
 export interface IViewBalance extends IBaseBalance {
-    funds?: Array<{
-        amount: string,
-        name: string
-    }>
+    funds?: Array<IBalance['funds'][string]>
 }

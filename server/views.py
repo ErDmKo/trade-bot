@@ -1,10 +1,6 @@
 import aiohttp_jinja2
 import sqlalchemy as sa
-import asyncio
-import aiohttp
 import datetime
-from sqlalchemy.sql import select
-from sqlalchemy.dialects.postgresql import JSONB, REAL
 from aiohttp import web
 from .utils import dumps, handle_socket
 from . import db
@@ -192,4 +188,4 @@ async def ws_trade_log(request):
     await ws.prepare(request)
     channel = request.app['socket_channels']['log']
     channel.append(ws)
-    return await handle_socket(ws)
+    return await handle_socket(ws, request.app, 'log')

@@ -4,9 +4,7 @@ import { AppState } from '../app.service';
 
 @Component({
   selector: 'balance',
-  providers: [
-    BalanceService,
-  ],
+  providers: [],
   styleUrls: [
       './style.scss'
   ],

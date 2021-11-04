@@ -2,8 +2,14 @@ import { HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { SocketService } from '../common/socket.service'
 
-@Injectable()
-export class TradeLogService extends SocketService {
+type Resp = {
+    message?: string
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class TradeLogService extends SocketService<Resp> {
     protected wsUrl = "/api/ws_trade_log"
 
     constructor() {
