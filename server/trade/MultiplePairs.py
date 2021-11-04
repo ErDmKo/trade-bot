@@ -1,6 +1,7 @@
 import logging
 from .VolumeStrategy import VolumeStrategy
 
+
 class MultiplePairs(object):
 
     STRATEGY = VolumeStrategy
@@ -12,14 +13,14 @@ class MultiplePairs(object):
 
     @classmethod
     async def create(cls,
-        engine,
-        tradeApi,
-        pubApi,
-        strategy=False,
-        is_demo=False,
-        log=False,
-        fee = False,
-        pair_list=[]):
+                     engine,
+                     tradeApi,
+                     pubApi,
+                     strategy=False,
+                     is_demo=False,
+                     log=False,
+                     fee=False,
+                     pair_list=[]):
 
         self = cls()
 
@@ -32,10 +33,10 @@ class MultiplePairs(object):
                 engine,
                 tradeApi,
                 pubApi,
-                is_demo = is_demo,
-                log = log,
-                fee = fee,
-                pair_list = (pair,)
+                is_demo=is_demo,
+                log=log,
+                fee=fee,
+                pair_list=(pair,)
             )
         return self
 

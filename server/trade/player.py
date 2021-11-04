@@ -1,3 +1,8 @@
+from server import utils
+from .MultiplePairs import MultiplePairs
+from ..btcelib import TradeAPIv1, PublicAPIv3
+from server import db
+import sqlalchemy as sa
 import asyncio
 import json
 import sys
@@ -6,15 +11,10 @@ from decimal import Decimal as D
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-import sqlalchemy as sa
-
-from server import db
-from server import utils 
-from ..btcelib import TradeAPIv1, PublicAPIv3
-from .MultiplePairs import MultiplePairs
 
 START_TIME = '2018-05-08 00:00'
 END_TIME = '2018-06-08 23:59'
+
 
 async def load_strategy(app, strategy_name):
     while True:
@@ -34,15 +34,17 @@ async def load_strategy(app, strategy_name):
             engine,
             tradeApi,
             pubApi,
-            pair_list = MultiplePairs.PAIRS,
-            strategy = getattr(module, strategy_name),
-            is_demo = False,
-            log = app['socket_channels']['log']
+            pair_list=MultiplePairs.PAIRS,
+            strategy=getattr(module, strategy_name),
+            is_demo=False,
+            log=app['socket_channels']['log']
         )
         break
 
+
 async def on_shutdown(app):
     app['strategy_maker'].cancel()
+
 
 def add_strategy(app, strategy_name='VolumeStrategy'):
     app['strategy_maker'] = asyncio.ensure_future(
@@ -50,6 +52,7 @@ def add_strategy(app, strategy_name='VolumeStrategy'):
         loop=app.loop
     )
     app.on_shutdown.append(on_shutdown)
+
 
 def get_query(player, start_date, end_date):
     start_date = start_date or START_TIME
@@ -68,15 +71,16 @@ def get_query(player, start_date, end_date):
         .limit(player.LIMIT)
     )
 
+
 async def main_test(
-        loop,
-        strategy_name='',
-        strategy_class=None,
-        start_date=None,
-        end_date=None,
-        conf=None,
-        constructor={}
-    ):
+    loop,
+    strategy_name='',
+    strategy_class=None,
+    start_date=None,
+    end_date=None,
+    conf=None,
+    constructor={}
+):
     conf = conf or utils.load_config()
     engine = await db.get_engine(conf['postgres'], loop)
     async with engine.acquire() as conn:
@@ -99,7 +103,7 @@ async def main_test(
         constructor.update({
             'is_demo': True,
             'pair_list': MultiplePairs.PAIRS
-        }) 
+        })
         player = await strategy.create(
             engine,
             tradeApi,
@@ -107,11 +111,12 @@ async def main_test(
             **constructor
         )
         clear_order = await conn.execute(db.demo_order.delete())
-        logger.info('player {} {}'.format(strategy_name, ", ".join(player.PAIRS)))
+        logger.info('player {} {}'.format(
+            strategy_name, ", ".join(player.PAIRS)))
         query = get_query(player, start_date, end_date)
         cursor = await conn.execute(query)
         index = 0
-        balance = 'Nothing has founded' 
+        balance = 'Nothing has founded'
         async for tick in cursor:
             balance = getattr(player, 'balance', {
                 'usd': D(2000),
@@ -128,22 +133,23 @@ async def main_test(
 
         logger.info(' - '.join([str(balance), str(index)]))
 
+
 def run_script(
-        strategy_name='MultiplePairs',
-        strategy_class = None,
-        start_date=START_TIME,
-        end_date=END_TIME,
-        conf = None,
-        constructor = {}
-    ):
-   loop = asyncio.get_event_loop()
-   loop.run_until_complete(main_test(
-           loop, 
-           strategy_name,
-           strategy_class,
-           start_date,
-           end_date,
-           conf,
-           constructor
-       )
-   )
+    strategy_name='MultiplePairs',
+    strategy_class=None,
+    start_date=START_TIME,
+    end_date=END_TIME,
+    conf=None,
+    constructor={}
+):
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main_test(
+        loop,
+        strategy_name,
+        strategy_class,
+        start_date,
+        end_date,
+        conf,
+        constructor
+    )
+    )

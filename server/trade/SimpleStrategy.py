@@ -1,9 +1,11 @@
 import asyncio
-import json, logging
+import json
+import logging
 import sqlalchemy as sa
 from decimal import Decimal as D
 from server import db
-from server import utils 
+from server import utils
+
 
 class SimpleStrategy(object):
 
@@ -19,15 +21,15 @@ class SimpleStrategy(object):
 
     @classmethod
     async def create(
-            cls,
-            engine,
-            tradeApi,
-            pubApi,
-            is_demo=False,
-            log=False,
-            pair_list=False,
-            fee = False
-        ):
+        cls,
+        engine,
+        tradeApi,
+        pubApi,
+        is_demo=False,
+        log=False,
+        pair_list=False,
+        fee=False
+    ):
         self = cls.init_self()
         if fee:
             self.FEE = D(fee)
@@ -38,7 +40,7 @@ class SimpleStrategy(object):
         self.log = log
         self.api = tradeApi
         self.pubApi = pubApi
-        self.engine = engine;
+        self.engine = engine
         self.connection = await engine.acquire()
         self.prec = D(10) ** -6
         currency = self.PAIR.split('_')
@@ -48,7 +50,7 @@ class SimpleStrategy(object):
         }
         self.directions = {
             currency[1]: 'buy',
-            currency[0]: 'sell' 
+            currency[0]: 'sell'
         }
         self.order_table = 'demo_order' if is_demo else 'order'
         await self.get_pair_info()
@@ -68,10 +70,10 @@ class SimpleStrategy(object):
         return getattr(db, self.order_table)
 
     async def get_pair_info(self):
-         resp = await self.pubApi.call('info')
-         self.pair_info = resp['pairs'][self.PAIR]
-         self.prec = D(10) ** -self.pair_info['decimal_places']
-         return self.pair_info
+        resp = await self.pubApi.call('info')
+        self.pair_info = resp['pairs'][self.PAIR]
+        self.prec = D(10) ** -self.pair_info['decimal_places']
+        return self.pair_info
 
     async def add_order(self, info, depth=False):
         if not info['api']:
@@ -90,8 +92,8 @@ class SimpleStrategy(object):
         order = self.get_order_table()
         cursor = await self.connection.execute(
             order.select()
-                .where(order.c.pair == self.PAIR)
-                .order_by(sa.desc(order.c.pub_date)).limit(1)
+            .where(order.c.pair == self.PAIR)
+            .order_by(sa.desc(order.c.pub_date)).limit(1)
         )
         async for order in cursor:
             self.order = order
@@ -110,11 +112,11 @@ class SimpleStrategy(object):
 
     def get_order_info(self, price, amount, is_sell):
         return dict(
-            pair = self.PAIR,
-            price = price,
-            amount = amount,
-            is_sell = is_sell,
-            extra = {}
+            pair=self.PAIR,
+            price=price,
+            amount=amount,
+            is_sell=is_sell,
+            extra={}
         )
 
     async def trade(self, direction, info):
@@ -128,7 +130,8 @@ class SimpleStrategy(object):
                 is_sell
             )
             self.balance[self.currency[direction]] += change_info[direction]
-            self.balance[self.currency[aposite_direction]] += change_info[aposite_direction]
+            self.balance[self.currency[aposite_direction]
+                         ] += change_info[aposite_direction]
             return {
                 "demo_order": "1",
                 "funds": self.balance
@@ -138,7 +141,7 @@ class SimpleStrategy(object):
             pair=info['pair'],
             type=direction,
             rate=info['price'],
-            amount = D(info['amount']).quantize(self.prec)
+            amount=D(info['amount']).quantize(self.prec)
         )
         if D(api_resp['received']) < info['amount']:
             self.print('CancelOrder {}'.format(
@@ -147,7 +150,7 @@ class SimpleStrategy(object):
             try:
                 result = await self.api.call(
                     'CancelOrder',
-                    order_id = api_resp['order_id']
+                    order_id=api_resp['order_id']
                 )
                 self.balance = result['funds']
                 return False
@@ -165,21 +168,22 @@ class SimpleStrategy(object):
                 old_order.price,
                 info['price'],
                 self.PAIR
-                )
+            )
             )
         else:
             self.print('{} before init now {} {}'.format(
                 direction,
                 info['price'],
                 self.PAIR
-                )
+            )
             )
 
     def get_trade_info(self, depth, direction, amount=False, old_order=False):
         is_sell = direction == 'sell'
         currency = self.currency[direction]
         price, volume = depth['bids' if is_sell else 'asks'][0]
-        info_amount = amount if amount else self.get_new_amount(D(volume), direction, price, old_order)
+        info_amount = amount if amount else self.get_new_amount(
+            D(volume), direction, price, old_order)
         money = info_amount if is_sell else D(price) * info_amount
         if self.balance[currency] < money:
             self.print('{} Low balance {} need more {} {}'.format(
@@ -187,12 +191,12 @@ class SimpleStrategy(object):
                 self.balance[currency],
                 (money - D(self.balance[currency])),
                 currency,
-                )
             )
-            return 
+            )
+            return
         info = self.get_order_info(price, info_amount, is_sell)
         return info
-        
+
     async def sell(self, depth, old_order=False, amount=False, print_info=1):
         info = self.get_trade_info(depth, 'sell', amount, old_order)
         if not info:
@@ -207,7 +211,6 @@ class SimpleStrategy(object):
         if print_info:
             self.print_order(info, 'sell', old_order)
         return info
-
 
     async def buy(self, depth, old_order=False, amount=False, print_info=1):
         info = self.get_trade_info(depth, 'buy', amount, old_order)
@@ -242,7 +245,8 @@ class SimpleStrategy(object):
         }
 
     def get_best_price(self, amount, price, is_sell, fee=0):
-        money_change = self.calc_money(D(self.pair_info['fee']) + fee, amount, price, is_sell)
+        money_change = self.calc_money(
+            D(self.pair_info['fee']) + fee, amount, price, is_sell)
         return money_change['buy']
 
     async def tick(self, resp, pair, balance=False, connection=False):
@@ -276,7 +280,8 @@ class SimpleStrategy(object):
                     self.FEE
                 )
                 if not self.is_demo:
-                    self.print('buy', old_money, resp['asks'][0][0], best_price) 
+                    self.print('buy', old_money,
+                               resp['asks'][0][0], best_price)
                 if old_money > best_price:
                     await self.buy(resp, self.order)
             else:
@@ -287,6 +292,7 @@ class SimpleStrategy(object):
                     self.FEE
                 )
                 if not self.is_demo:
-                    self.print('sell', old_money, resp['bids'][0][0], best_price) 
+                    self.print('sell', old_money,
+                               resp['bids'][0][0], best_price)
                 if old_money < best_price:
                     await self.sell(resp, self.order)

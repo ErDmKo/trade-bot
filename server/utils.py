@@ -6,6 +6,7 @@ import aiohttp
 from decimal import Decimal
 from datetime import date as dateFormat
 
+
 class BList(list):
 
     async def broadcast(self, message):
@@ -14,7 +15,7 @@ class BList(list):
             if exception:
                 print(
                     'close because socker error {}'
-                        .format(exception)
+                    .format(exception)
                 )
                 self.remove(waiter)
                 continue
@@ -29,14 +30,15 @@ class BList(list):
                     self.remove(waiter)
                     raise e
 
-async def handle_socket(ws, api=False, method=False):
 
+async def handle_socket(ws, app=False, method=False):
+    api = app.get('brokerClient')
     async for msg in ws:
         if msg.type == aiohttp.WSMsgType.TEXT:
             if msg.data == 'connect':
                 if api:
                     info = await api.call(method)
-                    ws.send_json(info, dumps = dumps)
+                    ws.send_json(info, dumps=dumps)
             elif msg.data == 'close':
                 await ws.close()
             else:
@@ -45,6 +47,7 @@ async def handle_socket(ws, api=False, method=False):
             print('ws connection closed with exception %s' %
                   ws.exception())
     return ws
+
 
 def load_config(fname=str(pathlib.Path('.') / 'config' / 'base.yaml')):
     with open(fname, 'rt') as f:
@@ -55,16 +58,19 @@ def load_config(fname=str(pathlib.Path('.') / 'config' / 'base.yaml')):
             data.update(yaml.load(f, Loader=yaml.BaseLoader))
     return data
 
+
 class DecimalEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, Decimal):
-            return str(obj) 
+            return str(obj)
         if isinstance(obj, dateFormat):
             return obj.isoformat()
         return super(DecimalEncoder, self).default(obj)
 
+
 def dumps(data):
     return json.dumps(data, cls=DecimalEncoder)
+
 
 def loads(data):
     return json.loads(data)

@@ -3,6 +3,18 @@
 # module: btcelib.py <http://pastebin.com/kABSEyYB>
 # import: simplejson <https://pypi.python.org/pypi/simplejson>
 
+from zlib import MAX_WBITS as _MAX_WBITS, decompress as _zdecompress
+from urllib.parse import urlencode
+from re import search
+from hmac import new as newhash
+from hashlib import sha512 as _sha512
+from decimal import Decimal
+import codecs
+import socket
+from http import client as httplib
+import errno
+from http.cookies import SimpleCookie
+from http.cookies import CookieError
 import logging
 logger = logging.getLogger(__name__)
 
@@ -82,19 +94,6 @@ BTC: 13buUVsVXG5YwhmP6g6Bgd35WZ7bKjJzwM
 LTC: Le3yV8mA3a7TrpQVHzpSSkBmKcd2Vw3NiR"""
 __credits__ = "Alan McIntyre <https://github.com/alanmcintyre>"
 
-from http.cookies import CookieError
-from http.cookies import SimpleCookie
-import errno
-from http import client as httplib
-import socket
-import codecs
-from decimal import Decimal
-from hashlib import sha512 as _sha512
-from hmac import new as newhash
-from re import search
-from urllib.parse import urlencode
-from zlib import MAX_WBITS as _MAX_WBITS, decompress as _zdecompress
-
 
 try:
     from simplejson import loads as jsonloads
@@ -111,6 +110,7 @@ class APIError(Exception):
     "Raise exception when the BTC-E API returned an error."
     pass
 
+
 class BTCEConnection(object):
     """BTC-E Public/Trade API persistent HTTPS connection.
     @cvar conn: shared httplib.HTTPSConnection between instances"""
@@ -120,10 +120,10 @@ class BTCEConnection(object):
         'Accept-Encoding': 'identity',
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive',
-        }
+    }
     _post_headers = {    # common and POST headers
         'Content-Type': 'application/x-www-form-urlencoded',
-        }
+    }
     _resp = None    # type 'httplib.HTTPResponse'
     conn = None     # type 'httplib.HTTPSConnection'
 
@@ -160,7 +160,8 @@ class BTCEConnection(object):
         """Calculation of the SHA-512 authentication signature.
         @param apikey: Trade API-Key {'Key': 'KEY', 'Secret': 'SECRET'}
         @param msg: Trade API method and parameters"""
-        sign = newhash(str.encode(apikey['Secret']), msg=str.encode(msg), digestmod=_sha512)
+        sign = newhash(str.encode(apikey['Secret']), msg=str.encode(
+            msg), digestmod=_sha512)
         cls._post_headers['Key'] = apikey['Key']
         cls._post_headers['Sign'] = sign.hexdigest()
 
@@ -256,8 +257,10 @@ class BTCEConnection(object):
                 raise APIError(str(data['error']))
         return data
 
+
 class PublicAPIv3(BTCEConnection):
     "BTC-E Public API v3 <https://btc-e.com/api/3/docs>."
+
     def __init__(self, *pairs, **connkw):
         """Initialization of the BTC-E Public API v3.
         @param *pairs: [btc_usd[-btc_rur[-...]]] or arguments
@@ -282,8 +285,10 @@ class PublicAPIv3(BTCEConnection):
             url = '/api/3/{}/{}'.format(method, self.pairs)
         return self.apirequest(url, **params)
 
+
 class TradeAPIv1(BTCEConnection):
     "BTC-E Trade API v1 <https://btc-e.com/tapi/docs>."
+
     def __init__(self, apikey, **connkw):
         """Initialization of the BTC-E Trade API v1.
         @raise APIError: where no 'invalid nonce' in error

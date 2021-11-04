@@ -6,6 +6,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
 from .SimpleStrategy import SimpleStrategy
 
+
 class OrderThread(object):
 
     FLAG_NAME = 'is_finished'
@@ -47,28 +48,31 @@ class OrderThread(object):
 
     async def merge(self, order):
         return await self.update_by_id(self.order.id,
-            extra = sa.cast(
-                sa.cast(func.coalesce(self.table.c.extra, '{}'), JSONB)
-                .concat(func.jsonb_build_object(
-                    self.FLAG_NAME, '1',
-                    'merged', order.get('id')
-                )), JSONB
-            )
-        )
+                                       extra=sa.cast(
+                                           sa.cast(func.coalesce(
+                                               self.table.c.extra, '{}'), JSONB)
+                                           .concat(func.jsonb_build_object(
+                                               self.FLAG_NAME, '1',
+                                               'merged', order.get('id')
+                                           )), JSONB
+                                       )
+                                       )
 
     async def nextStep(self, nextOrder=False):
         if not nextOrder:
             raise Exception('WTF dude?!?!')
 
         return await self.update_by_id(self.order.id,
-            extra = sa.cast(
-                sa.cast(func.coalesce(self.table.c.extra, '{}'), JSONB)
-                .concat(func.jsonb_build_object(
-                    self.FLAG_NAME, '1',
-                    'next', nextOrder['id'] if nextOrder else 'null'
-                )), JSONB
-            )
-        )
+                                       extra=sa.cast(
+                                           sa.cast(func.coalesce(
+                                               self.table.c.extra, '{}'), JSONB)
+                                           .concat(func.jsonb_build_object(
+                                               self.FLAG_NAME, '1',
+                                               'next', nextOrder['id'] if nextOrder else 'null'
+                                           )), JSONB
+                                       )
+                                       )
+
 
 class TrashHolder(object):
 
@@ -96,7 +100,7 @@ class TrashHolder(object):
 
     def get_min(self, direction):
         if not len(self.sell_info) and direction == 'sell' \
-            or not len(self.buy_info) and direction == 'buy':
+                or not len(self.buy_info) and direction == 'buy':
             return {
                 'margin': 0
             }
@@ -113,6 +117,7 @@ class TrashHolder(object):
         order_info = self.get_min('buy')
         return order_info['margin'] > self.THRESHOLD
 
+
 class ThreadStrategy(SimpleStrategy):
 
     LIMIT = 10000
@@ -121,7 +126,7 @@ class ThreadStrategy(SimpleStrategy):
     logger = logging.getLogger(__name__)
 
     def get_threshhold(self, depth):
-        return TrashHolder(depth)    
+        return TrashHolder(depth)
 
     async def get_order(self):
         self.order = None
@@ -129,10 +134,10 @@ class ThreadStrategy(SimpleStrategy):
         order_table = self.get_order_table()
         query = order_table.select() \
             .where(
-                (order_table.c.pair == self.PAIR) & \
-                (order_table.c.api != 'false') & \
-                (order_table.c.extra[self.ORDER_CLASS.FLAG_NAME].astext == '0') \
-            )
+                (order_table.c.pair == self.PAIR) &
+                (order_table.c.api != 'false') &
+                (order_table.c.extra[self.ORDER_CLASS.FLAG_NAME].astext == '0')
+        )
         '''
         ).order_by(
             func.row_number().over(
@@ -156,11 +161,11 @@ class ThreadStrategy(SimpleStrategy):
 
     def get_order_info(self, price, amount, is_sell):
         return dict(
-            pair = self.PAIR,
-            price = price,
-            amount = amount,
-            is_sell = is_sell,
-            extra = {
+            pair=self.PAIR,
+            price=price,
+            amount=amount,
+            is_sell=is_sell,
+            extra={
                 self.ORDER_CLASS.FLAG_NAME: "0"
             }
         )
@@ -194,7 +199,7 @@ class ThreadStrategy(SimpleStrategy):
                 if self.currency[direction] == currency:
                     self.print('Try to start new thread {}'.format(direction))
                     order = await getattr(self, direction)(
-                        resp, 
+                        resp,
                         amount=D(self.pair_info['min_amount'])
                     )
 
@@ -227,8 +232,8 @@ class ThreadStrategy(SimpleStrategy):
             for order in self.orders:
 
                 if old_order \
-                    and old_order.get('price') == order.get('price')  \
-                    and old_order.get('is_sell')  == order.get('is_sell'):
+                        and old_order.get('price') == order.get('price')  \
+                        and old_order.get('is_sell') == order.get('is_sell'):
                     await old_order.merge(order)
                     break
 
@@ -256,7 +261,8 @@ class ThreadStrategy(SimpleStrategy):
                 #print ('o {} b {} s {}'.format(old_money, buy_money, sell_money))
                 if order.get('is_sell'):
                     # check previous sell and current market sell
-                    margin = D(1 - (old_money / sell_money)).quantize(self.prec)
+                    margin = D(1 - (old_money / sell_money)
+                               ).quantize(self.prec)
                     if not self.is_demo and abs(margin) < thresh_hold.THRESHOLD:
                         self.print(
                             'Try to buy - previous {} sell {} now {} with fee {} marign {} {}'.format(
@@ -276,7 +282,7 @@ class ThreadStrategy(SimpleStrategy):
                     if old_money > -buy_money:
                         await self.buy(resp, order)
                 else:
-                    #previous buy and current market buy
+                    # previous buy and current market buy
                     margin = D((old_money / buy_money) - 1).quantize(self.prec)
                     if not self.is_demo and abs(margin) < thresh_hold.THRESHOLD:
                         self.print(
@@ -303,7 +309,7 @@ class ThreadStrategy(SimpleStrategy):
                     thresh_hold.get_min('buy')['margin']
                 ))
 
-            if  thresh_hold.need_to_sell():
+            if thresh_hold.need_to_sell():
                 order_info = thresh_hold.get_min('sell')
                 self.print('Sell last order price {} margin {} biger then {}'.format(
                     order_info['order'].get('price'),
@@ -312,7 +318,7 @@ class ThreadStrategy(SimpleStrategy):
                 ))
                 await self.start_new_thread(resp, 'sell')
             if thresh_hold.need_to_buy():
-                order_info =thresh_hold.get_min('buy')
+                order_info = thresh_hold.get_min('buy')
                 self.print('Buy price {} margin {} biger then {}'.format(
                     order_info['order'].get('price'),
                     thresh_hold.get_min('buy')['margin'],

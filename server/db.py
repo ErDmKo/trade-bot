@@ -16,14 +16,16 @@ meta = sa.MetaData()
 history = sa.Table(
     'history', meta,
     sa.Column('id', sa.Integer, nullable=False, primary_key=True),
-    sa.Column('pub_date', sa.DateTime, default=sa.sql.func.now(), nullable=False),
+    sa.Column('pub_date', sa.DateTime,
+              default=sa.sql.func.now(), nullable=False),
     sa.Column('pair', sa.String(200), nullable=False),
     sa.Column('resp', JSONB, nullable=False),
 )
 demo_order = sa.Table(
     'demo_order', meta,
     sa.Column('id', sa.Integer, nullable=False, primary_key=True),
-    sa.Column('pub_date', sa.DateTime, default=sa.sql.func.now(), nullable=False),
+    sa.Column('pub_date', sa.DateTime,
+              default=sa.sql.func.now(), nullable=False),
     sa.Column('price', sa.Float, nullable=False),
     sa.Column('amount', sa.Float, nullable=False),
     sa.Column('extra', JSONB, nullable=False),
@@ -55,11 +57,12 @@ OFFSET
     0;
 '''
 
+
 async def get_history(conn, group_by=False, args=[], limit=10, offset=0):
 
     sampling = False
     if group_by == 'minute':
-        sampling = 0 
+        sampling = 0
     if group_by == 'hour':
         sampling = 0.3
     if group_by == 'day':
@@ -70,14 +73,16 @@ async def get_history(conn, group_by=False, args=[], limit=10, offset=0):
         sampling = 0.001
 
     if sampling:
-        table = sa.tablesample(history, sa.func.system(sampling), seed=sa.cast('1', REAL))
+        table = sa.tablesample(history, sa.func.system(
+            sampling), seed=sa.cast('1', REAL))
     else:
         table = history
 
     args = [arg(table) for arg in args]
 
     query = table.c.resp[0].astext.cast(JSONB)['asks'][0][0].astext.cast(REAL)
-    query = query + table.c.resp[0].astext.cast(JSONB)['bids'][0][0].astext.cast(REAL)
+    query = query + \
+        table.c.resp[0].astext.cast(JSONB)['bids'][0][0].astext.cast(REAL)
     query = query / 2
 
     if (group_by):
@@ -107,7 +112,8 @@ async def get_history(conn, group_by=False, args=[], limit=10, offset=0):
 order = sa.Table(
     'order', meta,
     sa.Column('id', sa.Integer, nullable=False, primary_key=True),
-    sa.Column('pub_date', sa.DateTime, default=sa.sql.func.now(), nullable=False),
+    sa.Column('pub_date', sa.DateTime,
+              default=sa.sql.func.now(), nullable=False),
     sa.Column('price', sa.Float, nullable=False),
     sa.Column('amount', sa.Float, nullable=False),
     sa.Column('extra', JSONB, nullable=False),
@@ -116,11 +122,14 @@ order = sa.Table(
     sa.Column('is_sell', sa.Boolean(), nullable=False),
 )
 
+
 def sync_engine(conf):
     return sa.create_engine(
-        'postgresql://{user}:{password}@{host}:{port}/{database}'.format(**conf)
+        'postgresql://{user}:{password}@{host}:{port}/{database}'.format(
+            **conf)
     )
-    
+
+
 async def get_engine(conf, loop):
     engine = await aiopg.sa.create_engine(
         database=conf['database'],
@@ -132,38 +141,48 @@ async def get_engine(conf, loop):
         maxsize=int(conf['maxsize']),
         loop=loop)
     return engine
-    
+
+
 async def init_pg(app,  tryNo=None):
+    logger.info('Init db')
     if not tryNo:
         tryNo = 1
     try:
         engine = await get_engine(app['config']['postgres'], app.loop)
         app['db'] = engine
+        logger.info('DB connected')
     except Exception as e:
+        logger.info(f'Db connection error {e} new try {tryNo}')
         if tryNo > 5:
             raise e
         await asyncio.sleep(tryNo)
         await init_pg(app, tryNo + 1)
 
+
 async def close_pg(app):
+    if not app.get('db'):
+        return
     app['db'].close()
     await app['db'].wait_closed()
+
 
 async def add_order(conn, price, pair, amount, is_sell, api):
     result = await conn.execute(
         order.insert().values(
-            price = price,
-            pair = pair,
-            amount = amount,
-            is_sell = is_sell,
-            api = api
+            price=price,
+            pair=pair,
+            amount=amount,
+            is_sell=is_sell,
+            api=api
         )
     )
     result_info = await result.first()
     logger.info(result_info)
 
+
 def command_fn(command):
     logger.info('{} - undefined'.format(command))
+
 
 async def main_test(loop):
     conf = load_config()
@@ -172,7 +191,8 @@ async def main_test(loop):
         command = sys.argv[2]
         if command in ['drop', 'create']:
             table = sys.argv[3]
-            getattr(meta, '{}_all'.format(command))(engine, tables=[meta.tables.get(table)])
+            getattr(meta, '{}_all'.format(command))(
+                engine, tables=[meta.tables.get(table)])
         elif command == 'delete':
             table = sys.argv[3]
             with contextlib.closing(engine.connect()) as con:
@@ -184,6 +204,7 @@ async def main_test(loop):
         else:
             getattr(meta, command, lambda engine: command_fn(command))(engine)
 
+
 def run_script():
-   loop = asyncio.get_event_loop()
-   loop.run_until_complete(main_test(loop))
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main_test(loop))

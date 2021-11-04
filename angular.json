@@ -29,7 +29,14 @@
                         "outputPath": "server/static",
                         "index": "front/index.html",
                         "tsConfig": "tsconfig.json",
-                        "main": "front/main.browser.ts"
+                        "main": "front/main.browser.ts",
+                        "aot": false,
+                        "vendorChunk": true,
+                        "extractLicenses": false,
+                        "buildOptimizer": false,
+                        "sourceMap": true,
+                        "optimization": false,
+                        "namedChunks": true
                     },
                     "configurations": {
                         "production": {
@@ -41,7 +48,8 @@
                             "vendorChunk": false,
                             "buildOptimizer": true
                         }
-                    }
+                    },
+                    "defaultConfiguration": ""
                 }
             }
         }

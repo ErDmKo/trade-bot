@@ -5,13 +5,15 @@ from sqlalchemy.sql import func
 from sqlalchemy.dialects.postgresql import JSONB
 from .ThreadStrategy import ThreadStrategy, OrderThread
 
+
 class VolumeThread(OrderThread):
 
     FLAG_NAME = 'is_exceed'
     logger = logging.getLogger(__name__)
 
     async def merge(self, order):
-        base_amount = (D(order.get('amount')) + D(self.get('amount'))).quantize(self.prec)
+        base_amount = (D(order.get('amount')) +
+                       D(self.get('amount'))).quantize(self.prec)
         self.logger.info('{} id amount {} closed by merge with {} amount {} new amount {} pair {}'.format(
             self.get('id'),
             self.get('amount'),
@@ -20,24 +22,25 @@ class VolumeThread(OrderThread):
             base_amount,
             self.get('pair')
         ))
-        new_amount = (D(self.order.extra['amount']) + D(order.order.extra['amount'])).quantize(self.prec)
+        new_amount = (
+            D(self.order.extra['amount']) + D(order.order.extra['amount'])).quantize(self.prec)
         await self.update_by_id(order.get('id'),
-            amount = base_amount,
-            extra = sa.cast(
-                sa.cast(func.coalesce(self.table.c.extra, '{}'), JSONB)
-                .concat(func.jsonb_build_object(
+                                amount=base_amount,
+                                extra=sa.cast(
+            sa.cast(func.coalesce(self.table.c.extra, '{}'), JSONB)
+            .concat(func.jsonb_build_object(
                     'amount', str(new_amount)
-                )), JSONB
-            )
+                    )), JSONB
+        )
         )
         return await self.update_by_id(self.get('id'),
-            extra = sa.cast(
-                sa.cast(func.coalesce(self.table.c.extra, '{}'), JSONB)
-                .concat(func.jsonb_build_object(
+                                       extra=sa.cast(
+            sa.cast(func.coalesce(self.table.c.extra, '{}'), JSONB)
+            .concat(func.jsonb_build_object(
                     self.FLAG_NAME, '1',
                     'merged', order.get('id')
-                )), JSONB
-            )
+                    )), JSONB
+        )
         )
 
     async def nextStep(self, nextOrder=False):
@@ -45,40 +48,45 @@ class VolumeThread(OrderThread):
             raise Exception('WTF dude?!?!')
         order_table = self.table
         await self.read()
-        new_amount = (D(self.order.extra['amount']) - nextOrder['amount']).quantize(self.prec)
+        new_amount = (
+            D(self.order.extra['amount']) - nextOrder['amount']).quantize(self.prec)
         if new_amount <= 0:
             await self.update_by_id(self.order.id,
-                extra = sa.cast(
-                    sa.cast(func.coalesce(order_table.c.extra, '{}'), JSONB)
-                    .concat(func.jsonb_build_object(
-                        self.FLAG_NAME, '1',
-                        'amount', str(new_amount)
-                    )), JSONB
-                )
-            )
+                                    extra=sa.cast(
+                                        sa.cast(func.coalesce(
+                                            order_table.c.extra, '{}'), JSONB)
+                                        .concat(func.jsonb_build_object(
+                                            self.FLAG_NAME, '1',
+                                            'amount', str(new_amount)
+                                        )), JSONB
+                                    )
+                                    )
         else:
-            await self.update_by_id(self.order.id, 
-                extra = sa.cast(
-                    sa.cast(func.coalesce(order_table.c.extra, '{}'), JSONB)
-                    .concat(func.jsonb_build_object(
-                        'amount', str(new_amount)
-                    )), JSONB
-                )
-            )
+            await self.update_by_id(self.order.id,
+                                    extra=sa.cast(
+                                        sa.cast(func.coalesce(
+                                            order_table.c.extra, '{}'), JSONB)
+                                        .concat(func.jsonb_build_object(
+                                            'amount', str(new_amount)
+                                        )), JSONB
+                                    )
+                                    )
         await self.read()
         return await self.update_by_id(nextOrder['id'],
-            extra = sa.cast(
-                sa.cast(func.coalesce(order_table.c.extra, '{}'), JSONB)
-                .concat(func.jsonb_build_object(
+                                       extra=sa.cast(
+            sa.cast(func.coalesce(order_table.c.extra, '{}'), JSONB)
+            .concat(func.jsonb_build_object(
                     'parent', self.order.id,
-                )), JSONB
-            )
+                    )), JSONB
         )
+        )
+
 
 class VolumeStrategy(ThreadStrategy):
     LIMIT = 20000
     ORDER_CLASS = VolumeThread
-    MAX_VOLUME = D(5) # % form balance less precent is hight accuracy and low speed
+    # % form balance less precent is hight accuracy and low speed
+    MAX_VOLUME = D(5)
 
     async def add_order(self, info, depth):
         if not info['api']:
@@ -108,7 +116,7 @@ class VolumeStrategy(ThreadStrategy):
                 info['price'],
                 info['amount'],
                 self.PAIR
-                )
+            )
             )
         else:
             self.print('{} before init now price {} amount {} {}'.format(
@@ -116,7 +124,7 @@ class VolumeStrategy(ThreadStrategy):
                 info['price'],
                 info['amount'],
                 self.PAIR
-                )
+            )
             )
 
     def get_new_amount(self, volume, direction, price, old_order):
@@ -135,7 +143,8 @@ class VolumeStrategy(ThreadStrategy):
         print('selected - {}'.format(amounts[direction]))
         '''
         new_volume = min([
-            D(old_order.get('amount')), # * (D(1) + self.MAX_VOLUME)).quantize(self.prec),
+            # * (D(1) + self.MAX_VOLUME)).quantize(self.prec),
+            D(old_order.get('amount')),
             volume,
             # (balance[direction] * (self.MAX_VOLUME/100)).quantize(self.prec)
         ])
@@ -143,4 +152,3 @@ class VolumeStrategy(ThreadStrategy):
             D(self.pair_info['min_amount']),
             new_volume
         ])
-

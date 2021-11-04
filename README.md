@@ -12,3 +12,4 @@ Angular2 + aiohttp + sqlalchemy + postgresql
 `python -m server sql drop <table>` - to drop <table>
 `python -m server sql create <table>` - to create <table>
 `python -m server play` - to run player
+`python -m server api` - check API connection

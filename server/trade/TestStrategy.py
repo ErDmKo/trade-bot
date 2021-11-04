@@ -3,6 +3,7 @@ from .ThreadStrategy import ThreadStrategy
 
 class TestStrategy(ThreadStrategy):
     logger = logging.getLogger(__name__)
+
     async def order_cancel(self):
         await self.sell({
             'bids': [
@@ -15,4 +16,4 @@ class TestStrategy(ThreadStrategy):
             'CancelOrder',
             order_id=1679745692
         )
-        print (result)
+        print(result)
